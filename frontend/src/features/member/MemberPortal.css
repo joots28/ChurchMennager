@@ -1,0 +1,48 @@
+/* Estilos isolados da área de membros ou de seu componente. */
+
+.member-portal {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.member-main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 42px 24px 70px;
+}
+
+.member-welcome h1 {
+  font-size: 29px;
+  letter-spacing: -.8px;
+  margin: 9px 0;
+}
+
+.member-welcome p {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.member-footer {
+  text-align: center;
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 42px;
+}
+
+@media (max-width:800px) {
+  .member-main {
+    padding: 28px 17px 55px;
+  }
+}
+
+@media (max-width:540px) {
+  .member-main {
+    padding: 25px 15px 50px;
+  }
+}
+
+@media (max-width:540px) {
+  .member-welcome h1 {
+    font-size: 25px;
+  }
+}

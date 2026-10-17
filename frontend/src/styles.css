@@ -1,0 +1,7 @@
+/* Entrada dos estilos globais. Os estilos de componentes ficam junto de cada JSX. */
+
+@import "./styles/base.css";
+
+@import "./styles/responsive.css";
+
+@import "./styles/theme.css";

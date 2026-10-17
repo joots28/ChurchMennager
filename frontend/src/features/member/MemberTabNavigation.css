@@ -1,0 +1,42 @@
+/* Estilos isolados da área de membros ou de seu componente. */
+
+.member-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 28px 0 20px;
+  overflow: auto;
+}
+
+.member-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  background: white;
+  border: 1px solid var(--border);
+  color: #475569;
+  border-radius: 9px;
+  padding: 11px 15px;
+  font-size: 12px;
+}
+
+.member-tabs button.active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+@media (max-width:540px) {
+  .member-tabs {
+    margin: 22px -15px 17px;
+    padding: 0 15px;
+  }
+}
+
+@media (max-width:540px) {
+  .member-tabs button {
+    padding: 10px 12px;
+  }
+}

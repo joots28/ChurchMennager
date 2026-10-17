@@ -1,0 +1,109 @@
+/* Estilos isolados do componente/área correspondente. */
+
+.event-list {
+  padding: 3px 20px;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid #f1f5f9;
+  min-width: 0;
+}
+
+.event-row:last-child {
+  border-bottom: 0;
+}
+
+.event-date {
+  width: 44px;
+  height: 47px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #2563eb;
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.event-date strong {
+  font-size: 18px;
+  line-height: 1.05;
+}
+
+.event-date span {
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.event-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.event-info strong {
+  font-size: 12px;
+  white-space: normal;
+}
+
+.event-info span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #64748b;
+  font-size: 11px;
+  white-space: normal;
+}
+
+@media (max-width:800px) {
+  .event-list {
+    padding: 0 15px;
+  }
+}
+
+@media (max-width:800px) {
+  .event-row {
+    gap: 9px;
+  }
+}
+
+@media (max-width:800px) {
+  .event-date {
+    width: 39px;
+    height: 43px;
+  }
+}
+
+@media (max-width:540px) {
+  .event-list {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width:540px) {
+  .event-row {
+    flex-wrap: wrap;
+    padding: 13px 0;
+  }
+}
+
+@media (max-width:540px) {
+  .event-info {
+    min-width: calc(100% - 95px);
+  }
+}
+
+@media (max-width:540px) {
+  .event-row>.badge {
+    margin-left: 48px;
+  }
+}

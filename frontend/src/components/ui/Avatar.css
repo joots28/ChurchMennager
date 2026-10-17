@@ -1,0 +1,19 @@
+/* Avatar compartilhado por menu, cabeçalho e lista de membros. */
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #334155;
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex: none;
+}
+
+.avatar-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}

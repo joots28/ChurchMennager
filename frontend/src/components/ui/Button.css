@@ -1,0 +1,46 @@
+/* Estilos isolados do componente/área correspondente. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  min-height: 42px;
+  padding: 0 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background .15s,border-color .15s;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 2px #0f172a0d;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #334155;
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.btn-sm {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 13px;
+}
+
+.btn-lg {
+  min-height: 48px;
+}

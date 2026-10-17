@@ -1,0 +1,68 @@
+/* Cabeçalho visual da agenda de eventos. */
+
+.calendar-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  margin-bottom: 16px;
+}
+
+.calendar-illustration {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: #2563eb;
+  background: #eff6ff;
+  border-radius: 11px;
+  flex: none;
+}
+
+.calendar-summary>div:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.calendar-summary strong {
+  font-size: 13px;
+}
+
+.calendar-summary p {
+  font-size: 11px;
+  color: #64748b;
+  margin: 5px 0 0;
+  line-height: 1.5;
+}
+
+.calendar-count {
+  color: #2563eb;
+  background: #eff6ff;
+  border-radius: 7px;
+  padding: 7px 9px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+@media (max-width:540px) {
+  .calendar-summary {
+    padding: 14px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width:540px) {
+  .calendar-summary>div:nth-child(2) {
+    width: calc(100% - 60px);
+  }
+}
+
+@media (max-width:540px) {
+  .calendar-count {
+    margin-left: 54px;
+  }
+}

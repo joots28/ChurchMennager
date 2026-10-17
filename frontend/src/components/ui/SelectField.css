@@ -1,0 +1,14 @@
+/* Estilos exclusivos do seletor. */
+.select-shell select {
+  height: 48px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 12px;
+  color: #0f172a;
+}
+
+.select-shell select:focus {
+  border-color: #93c5fd;
+}

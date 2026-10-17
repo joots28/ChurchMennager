@@ -1,0 +1,34 @@
+/* Estilos isolados da área de membros ou de seu componente. */
+
+.profile-panel {
+  padding: 30px;
+  text-align: center;
+}
+
+.avatar-large {
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.profile-panel h2 {
+  font-size: 19px;
+  margin: 0 0 6px;
+}
+
+.profile-panel>p {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.profile-panel .muted {
+  margin-top: 22px;
+  color: #94a3b8;
+}

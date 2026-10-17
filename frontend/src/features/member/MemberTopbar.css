@@ -1,0 +1,48 @@
+/* Estilos isolados da área de membros ou de seu componente. */
+
+.member-topbar {
+  height: 72px;
+  padding: 0 max(24px,calc((100% - 1040px)/2));
+  background: white;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.member-top-right {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  font-size: 12px;
+  color: #475569;
+}
+
+@media (max-width:800px) {
+  .member-topbar {
+    padding: 0 17px;
+  }
+}
+
+@media (max-width:540px) {
+  .member-topbar {
+    height: 64px;
+  }
+}
+
+@media (max-width:540px) {
+  .member-top-right {
+    gap: 5px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width:540px) {
+  .member-top-right span {
+    max-width: 118px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

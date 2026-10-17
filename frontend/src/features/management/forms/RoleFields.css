@@ -1,0 +1,28 @@
+/* Estilos do grupo de permissões mostrado no formulário de cargo. */
+.permission-fieldset {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.permission-fieldset legend {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  padding: 0 5px;
+}
+
+.permission-fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.permission-fieldset input {
+  accent-color: #2563eb;
+}

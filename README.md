@@ -1,149 +1,142 @@
 <div align="center">
 
-# ⛪ ChurchManager
+# ChurchManager
 
-### Gestão inteligente, organizada e acessível para comunidades religiosas
+### Gestão organizada para comunidades e instituições religiosas
 
-**Projeto acadêmico / TCC** · Aplicação web responsiva · Front-end + API REST + banco relacional
+**Projeto acadêmico / TCC · Web responsiva · React + C# / ASP.NET Core + MySQL**
 
-<p>
-  <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=111827">
-  <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-ES2022-F7DF1E?logo=javascript&logoColor=111827">
-  <img alt="Vite" src="https://img.shields.io/badge/Vite-Frontend-646CFF?logo=vite&logoColor=white">
-  <img alt="C%23" src="https://img.shields.io/badge/C%23-.NET%208-512BD4?logo=dotnet&logoColor=white">
-  <img alt="MySQL" src="https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white">
-  <img alt="Status" src="https://img.shields.io/badge/status-em%20desenvolvimento-orange">
-</p>
-
-[Visão geral](#-visão-geral) · [Funcionalidades](#-funcionalidades) · [Arquitetura](#-arquitetura) · [Instalação](#-como-executar-localmente) · [Deploy](#-publicação-no-render) · [Segurança](#-segurança-e-transparência)
+[Objetivo](#-objetivo-do-projeto) · [Funcionalidades](#-funcionalidades) · [Tecnologias](#-tecnologias) · [Executar localmente](#-executar-localmente) · [Arquitetura](#-arquitetura) · [Implantação](#-implantação) · [Segurança](#-segurança-e-limitações)
 
 </div>
 
 ---
 
-## ✨ Visão geral
+## 📌 Sobre o projeto
 
-O **ChurchManager** é um sistema de gestão voltado à organização administrativa de igrejas e comunidades religiosas. A proposta é reunir em um só ambiente informações e rotinas que muitas vezes ficam distribuídas entre planilhas, mensagens e registros manuais — com uma interface que se adapta a **computadores, tablets e celulares**.
+O **ChurchManager** é uma proposta de sistema web para centralizar rotinas administrativas de uma igreja ou comunidade religiosa em uma interface responsiva, utilizável em computadores, tablets e celulares. A ideia é substituir parte dos controles dispersos em anotações e planilhas por módulos organizados, com informações estruturadas e acesso controlado.
 
-O projeto faz parte de um trabalho acadêmico/TCC e foi estruturado para estudar e demonstrar o desenvolvimento *full-stack*: interface React, API independente em C# e persistência relacional em MySQL. A organização modular busca deixar cada tela, componente, estilo e responsabilidade técnica mais fácil de localizar, compreender e manter.
+O projeto está sendo desenvolvido como trabalho acadêmico/TCC. Esta versão reúne uma base de front-end, uma API independente e um esquema de banco de dados. Ela **não deve ser confundida com uma versão de produção pronta**: alguns fluxos ainda são demonstrativos e os builds completos e os testes integrados precisam ser executados antes de uma publicação estável.
 
-> **Status do projeto:** em desenvolvimento. Esta documentação descreve a base e o escopo planejado. Antes do uso real, é necessário instalar, executar e validar os fluxos completos, revisar as configurações de segurança e realizar os testes descritos em `docs/`. Não use esta versão para armazenar dados reais de membros ou informações financeiras sem a homologação necessária.
+## 🎯 Objetivo do projeto
 
-## 🎯 Objetivos e relevância
+- Centralizar informações administrativas e operacionais em um único ambiente.
+- Facilitar a organização de membros, ministérios, eventos, escalas, cargos e registros financeiros.
+- Oferecer uma experiência coerente em dispositivos móveis e desktop, sem manter duas aplicações separadas.
+- Separar interface, regras de negócio, API e persistência para facilitar manutenção e evolução.
+- Aplicar práticas de desenvolvimento estudadas no curso: componentes reutilizáveis, validação no servidor, autenticação, organização modular, configuração por ambiente e documentação técnica.
 
-- **Centralização:** organizar informações administrativas em módulos coerentes.
-- **Planejamento:** facilitar a consulta de membros, ministérios, eventos e escalas.
-- **Acessibilidade:** oferecer navegação responsiva em diferentes tamanhos de tela.
-- **Manutenção:** separar a interface, os estilos, os serviços HTTP, a API e o banco.
-- **Aprendizagem:** aplicar conceitos de componentes reutilizáveis, API REST, autenticação, validação, modelagem de dados e implantação.
-- **Evolução responsável:** documentar limitações e pendências em vez de apresentar recursos experimentais como prontos para produção.
+### Por que ele é importante?
+
+Uma organização comunitária depende de informações confiáveis e acessíveis às pessoas certas. Reunir essas rotinas em módulos bem definidos pode reduzir retrabalho, facilitar o planejamento e apoiar a continuidade das atividades. Do ponto de vista educacional, o ChurchManager também permite praticar a construção de uma aplicação full-stack, desde a interface até a API e o modelo relacional, deixando explícitos os cuidados de segurança e as limitações que ainda precisam ser resolvidas.
 
 ## 🧩 Funcionalidades
 
-| Módulo | Propósito | Situação nesta base |
-|---|---|---|
-| 🔐 Acesso | Login, cadastro e recuperação de acesso | Há fluxos de login/cadastro; recuperação por e-mail ainda requer integração |
-| 📊 Painel inicial | Visão resumida das informações administrativas | Parte dos indicadores utiliza dados demonstrativos |
-| 👥 Membros | Consultar e administrar registros | Endpoints CRUD previstos/disponíveis; validar a integração ponta a ponta |
-| 🙏 Ministérios | Organizar grupos e ministérios | Módulo administrativo |
-| 📅 Eventos | Registrar datas, horários, locais e status | Notificações automáticas não implementadas |
-| 💰 Financeiro | Registrar entradas e saídas para acompanhamento | Não processa pagamentos nem se integra a instituições bancárias |
-| 🗓️ Escalas | Organizar equipes, datas e horários | Validar todos os fluxos de atribuição |
-| 🪪 Cargos e funções | Registrar cargos e informações relacionadas a permissões | Permissões granulares por cargo ainda precisam ser implementadas |
-| ⚙️ Configurações | Manter informações institucionais | Depende da API e das permissões configuradas |
-| 🧑‍🤝‍🧑 Portal do membro | Acesso a perfil, eventos, escalas e orientações | A experiência visual existe; integração completa requer endpoints e regras próprios |
-| 📤 Exportação CSV | Exportar informações tabulares | Conferir os resultados antes de usar os arquivos exportados |
-| 🎨 Tema e responsividade | Tema claro/escuro e adaptação a diferentes telas | Validar em navegadores e dispositivos reais |
-| 🧪 Demonstração | Explorar telas com dados fictícios sem API ativa | Apenas demonstração; não equivale a persistência compartilhada |
+Os itens abaixo descrevem o código desta versão. Quando uma função ainda é visual, local ou parcial, isso está sinalizado para não confundir uma demonstração com um serviço já integrado.
 
-A tabela diferencia a existência de telas e estruturas de uma integração plenamente homologada. A conclusão de cada módulo deve ser confirmada por testes no ambiente configurado.
+| Módulo | O que oferece nesta versão | Situação / observação |
+|---|---|---|
+| Acesso | Tela de login, cadastro em duas etapas e telas de recuperação de acesso | Login e cadastro possuem fluxo na API; recuperação por e-mail ainda não está integrada |
+| Painel inicial | Resumo visual e indicadores da rotina administrativa | Dados podem ser demonstrativos; validar as métricas contra a API antes de uso real |
+| Membros | Listagem e operações de cadastro, consulta, edição e exclusão | API REST disponível; validar o fluxo completo em ambiente local |
+| Ministérios | Organização e manutenção de ministérios | API REST disponível |
+| Eventos | Dados de eventos, datas, horários, local e status | API REST disponível; notificações automáticas não estão implementadas |
+| Financeiro | Registro de entradas e saídas e apresentação de indicadores | É um controle administrativo; não processa pagamentos reais nem se conecta a bancos |
+| Escalas | Organização de equipes, ministérios, datas e horários | API REST disponível; confirmar atribuição de integrantes durante homologação |
+| Cargos | Cadastro de cargos e informações sobre permissões | As permissões exibidas são informativas; ainda não existe RBAC granular por cargo |
+| Configurações da igreja | Consulta e atualização de dados institucionais | API de configurações disponível para a conta administrativa autenticada |
+| Portal do membro | Área visual com início, eventos, escalas, perfil e orientação sobre contribuições | O portal ainda precisa de endpoints e regras próprios para ser considerado integrado à produção |
+| Exportação CSV | Utilitário para exportar dados tabulares | Validar cada exportação manualmente; a rotina inclui neutralização de valores que poderiam ser interpretados como fórmulas |
+| Tema visual | Alternância entre tema claro e escuro | Recurso de interface |
+| Layout responsivo | Componentes e navegação adaptáveis a diferentes larguras | Requer validação em dispositivos e navegadores reais |
+| Modo de demonstração | Dados fictícios locais para demonstrar as telas sem API ativa | Somente para demonstração; não oferece persistência compartilhada entre usuários |
 
 ## 🛠️ Tecnologias
 
-| Camada | Tecnologias | Responsabilidade |
-|---|---|---|
-| **Front-end** | React 18, JavaScript/JSX, Vite, CSS | Interface, navegação, componentes e experiência responsiva |
-| **API** | C#, ASP.NET Core 8 | Endpoints HTTP, regras de negócio, validação e autorização |
-| **Persistência** | Entity Framework Core, Pomelo, MySQL 8 | Mapeamento objeto-relacional e armazenamento |
-| **Autenticação** | JWT Bearer, PasswordHasher | Identidade e proteção de credenciais na API |
-| **Ambiente** | Docker Compose, Dockerfile | Execução local e empacotamento da API |
-| **Hospedagem planejada** | Render | Publicação do front-end e da API após configuração e validação |
+### Front-end
+
+- **React 18** para composição das telas e componentes.
+- **JavaScript / JSX**, sem TypeScript nesta versão.
+- **Vite** para desenvolvimento e geração dos arquivos estáticos.
+- **CSS modular por componente** para isolar estilos e facilitar manutenção.
+- `fetch` para comunicação HTTP com a API.
+
+### Back-end
+
+- **C# e ASP.NET Core (.NET 8)** para a API REST.
+- **Entity Framework Core** com provedor **Pomelo para MySQL**.
+- **JWT Bearer** para autenticação de chamadas protegidas.
+- `PasswordHasher` do ASP.NET Core para armazenar hashes de senha em vez de texto puro.
+- Validação no servidor, limitação de tentativas em endpoints de autenticação, autorização por função administrativa e isolamento por igreja nos CRUDs preparados.
+
+### Banco de dados e ambiente
+
+- **MySQL 8** para desenvolvimento nesta versão.
+- **Docker Compose** para subir o banco local.
+- **Dockerfile** da API e `render.yaml` como ponto de partida para implantação no Render.
 
 ## 🧱 Arquitetura
 
+A solução está separada em três partes:
+
 ```text
-┌────────────────────────────────────┐
-│ Navegador / dispositivo móvel      │
-│ React + Vite + CSS                 │
-└──────────────────┬─────────────────┘
-                   │ HTTPS / JSON / JWT
-                   ▼
-┌────────────────────────────────────┐
-│ API REST                           │
-│ C# + ASP.NET Core + validação      │
-└──────────────────┬─────────────────┘
-                   │ Entity Framework Core
-                   ▼
-┌────────────────────────────────────┐
-│ Banco relacional                   │
-│ MySQL 8                            │
-└────────────────────────────────────┘
+Navegador (React + Vite)
+        │ HTTPS / JSON / JWT
+        ▼
+API REST (C# / ASP.NET Core)
+        │ Entity Framework Core
+        ▼
+Banco de dados MySQL
 ```
 
-O navegador **não acessa o banco diretamente**. A comunicação com os dados passa pela API, responsável por validar as solicitações e aplicar as regras do servidor.
+O front-end não deve acessar o banco diretamente. O navegador conversa com a API; a API valida a identidade e as permissões, aplica as regras e então consulta ou atualiza o banco.
 
 ### Organização do repositório
 
 ```text
-ChurchMennager/
+ChurchManager/
 ├── frontend/
 │   ├── index.html
 │   ├── package.json
 │   └── src/
-│       ├── App.jsx
-│       ├── main.jsx
-│       ├── components/      # elementos de interface reutilizáveis
-│       ├── features/        # telas separadas por domínio
-│       ├── hooks/           # estado e ações reutilizáveis
-│       ├── services/        # autenticação e comunicação HTTP
-│       ├── data/            # dados fictícios para demonstração
-│       └── utils/            # validação, formatação e exportação
+│       ├── App.jsx                 # composição principal
+│       ├── main.jsx                # inicialização do React
+│       ├── config/                 # navegação e metadados
+│       ├── components/
+│       │   ├── layout/             # estrutura, menu e cabeçalho
+│       │   └── ui/                 # botões, campos, tabelas, modais etc.
+│       ├── features/               # páginas e módulos por domínio
+│       ├── hooks/                  # estado e ações reutilizáveis
+│       ├── services/               # autenticação e chamadas HTTP
+│       ├── data/                   # dados fictícios para demonstração
+│       └── utils/                  # validação, formatação e exportação
 ├── backend/
 │   ├── ChurchManager.Api/
-│   │   ├── Controllers/
-│   │   ├── Data/
-│   │   ├── Models/
-│   │   ├── Validation/
+│   │   ├── Controllers/            # endpoints REST
+│   │   ├── Data/                   # contexto de dados
+│   │   ├── Models/                 # entidades e contratos
+│   │   ├── Validation/             # validação no servidor
 │   │   └── Dockerfile
 │   └── database/
 │       ├── schema.sql
 │       └── migrations/
-├── docs/                    # arquitetura, segurança e plano de deploy
-├── preview/                 # prévia visual independente
-├── .github/workflows/       # automações de validação
-├── docker-compose.yml
-└── render.yaml
+├── docs/                            # decisões, arquitetura e validação
+├── preview/                         # prévia independente para consulta visual
+├── docker-compose.yml                # banco MySQL de desenvolvimento
+└── render.yaml                       # modelo de implantação
 ```
 
-O front-end é uma *Single Page Application* (SPA): o navegador carrega um HTML inicial e o React compõe as telas a partir dos módulos JSX. Cada recurso continua separado em arquivos próprios; isso evita duplicar um documento HTML completo por tela.
+**Por que existe apenas um `index.html` no front-end?** O React é uma SPA (*Single Page Application*): o HTML inicial carrega a aplicação e os arquivos JSX determinam as telas. Cada módulo continua separado, sem duplicar um HTML completo para cada página.
 
-## ✅ Pré-requisitos
+## 🚀 Executar localmente
 
-- [Node.js LTS e npm](https://nodejs.org/) para o front-end.
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) para a API.
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) ou Docker Engine com Docker Compose para o MySQL.
-- Git para versionamento.
+### Pré-requisitos
 
-## 🚀 Como executar localmente
+- Node.js LTS e npm.
+- .NET SDK 8.
+- Docker Desktop ou Docker Engine com Docker Compose.
 
-### 1. Obter o código
-
-```bash
-git clone https://github.com/joots28/ChurchMennager.git
-cd ChurchMennager
-```
-
-### 2. Subir o banco de dados
+### 1. Iniciar o MySQL
 
 Na raiz do projeto:
 
@@ -151,9 +144,11 @@ Na raiz do projeto:
 docker compose up -d mysql
 ```
 
-O serviço local usa a porta `3307`. O script `backend/database/schema.sql` é aplicado ao inicializar um volume novo. Caso exista um volume anterior, o MySQL não reaplica automaticamente os scripts de inicialização.
+O banco é publicado localmente na porta `3307`. O script `backend/database/schema.sql` é aplicado na inicialização de um volume novo. Se o volume já existir, o MySQL não reaplica automaticamente o script de inicialização.
 
-### 3. Restaurar e executar a API
+### 2. Iniciar a API
+
+Em um terminal:
 
 ```bash
 cd backend/ChurchManager.Api
@@ -161,9 +156,9 @@ dotnet restore
 dotnet run --urls http://localhost:5080
 ```
 
-Teste o endpoint de saúde em `http://localhost:5080/health`. A disponibilidade do Swagger depende da configuração de ambiente da API.
+A API deve responder ao teste de saúde em `http://localhost:5080/health`. Em ambiente de desenvolvimento, a documentação Swagger fica disponível quando a API estiver executando.
 
-### 4. Configurar e iniciar a interface
+### 3. Iniciar o front-end
 
 Em outro terminal:
 
@@ -171,104 +166,104 @@ Em outro terminal:
 cd frontend
 ```
 
-Crie o arquivo local a partir do exemplo (PowerShell):
+Crie seu arquivo local a partir do exemplo (PowerShell):
 
 ```powershell
 Copy-Item .env.example .env.local
 ```
 
-Instale as dependências e inicie o Vite:
+Depois execute:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Acesse o endereço informado pelo Vite, normalmente `http://localhost:5173`. Para testar os módulos conectados, mantenha a API e o banco em execução.
+Abra o endereço local informado pelo Vite (normalmente `http://localhost:5173`). A API precisa estar ativa e o banco disponível para testar o modo conectado.
 
-### Modo de demonstração
+### Modo de demonstração sem API
 
-No arquivo `frontend/.env.local`, configure:
+No `frontend/.env.local`, defina:
 
 ```dotenv
 VITE_DEMO_MODE=true
 VITE_API_URL=http://localhost:5080
 ```
 
-Reinicie o Vite depois de alterar as variáveis. O modo de demonstração usa dados fictícios no navegador e **não deve ser usado como autenticação nem armazenamento de produção**. Para voltar ao modo conectado, defina `VITE_DEMO_MODE=false`.
+Reinicie o Vite após alterar variáveis. O modo de demonstração trabalha com dados fictícios no navegador; não é adequado para informações reais e não serve como autenticação de produção. O acesso de demonstração aparece na tela de login quando esse modo é ativado.
 
-## ☁️ Publicação no Render
+Para voltar ao modo conectado, defina `VITE_DEMO_MODE=false` e deixe a API e o banco funcionando.
 
-O arquivo `render.yaml` e o plano em `docs/PLANO-DE-DEPLOY.md` são pontos de partida; eles **não significam que os serviços já estejam publicados**.
+## ☁️ Implantação
 
-| Serviço | Configuração planejada |
-|---|---|
-| Front-end | Render Static Site · diretório `frontend` · build `npm install && npm run build` · diretório publicado `dist` |
-| API | Render Web Service · Dockerfile em `backend/ChurchManager.Api/Dockerfile` |
-| Banco | MySQL compatível com o provedor configurado na API |
+O `render.yaml` é um **modelo inicial**, não uma implantação já realizada. O plano de publicação previsto separa o site estático da API em Docker. Leia [`docs/PLANO-DE-DEPLOY.md`](docs/PLANO-DE-DEPLOY.md) antes de criar serviços.
 
-Antes de publicar, configure a chave JWT, a string de conexão do banco e a origem autorizada do front-end nas variáveis de ambiente. Defina `VITE_API_URL` com a URL HTTPS pública da API e faça um novo build do Vite depois de alterar variáveis usadas no build.
+- **Front-end:** Render Static Site, raiz `frontend`, comando `npm install && npm run build`, diretório publicado `dist`.
+- **API:** Render Web Service usando Dockerfile em `backend/ChurchManager.Api/Dockerfile` e contexto da raiz do repositório.
+- **Banco:** nesta versão a API exige MySQL compatível com a configuração atual. O PostgreSQL gratuito do Render não é compatível diretamente com o provedor atual e expira após 30 dias; não deve ser usado como destino sem uma migração real do código e do esquema.
+- **Configuração obrigatória:** `JWT_KEY`, string de conexão e `FRONTEND_ORIGIN` devem ser informados nas variáveis de ambiente do provedor. No serviço estático, defina `VITE_API_URL` para a URL HTTPS pública da API e faça novo build.
 
-**Atenção ao banco:** esta versão usa MySQL. PostgreSQL não é um substituto direto; a troca exige migrar o provedor, o esquema e as configurações e testar a aplicação. Confira as condições atuais de hospedagem, armazenamento persistente, backups e limites do plano antes de decidir a arquitetura final.
+Serviços gratuitos de hospedagem podem suspender a API quando ficam ociosos. Isso pode causar demora na primeira solicitação. Não publique dados de membros ou finanças reais antes de configurar armazenamento persistente, backups, autenticação e permissões de acordo com o uso pretendido.
 
-## 🔐 Segurança e transparência
+## 🔐 Segurança e limitações conhecidas
 
-A base inclui mecanismos úteis para desenvolvimento, mas ainda precisa de revisão técnica e testes antes de lidar com informações reais:
+A base inclui mecanismos de segurança úteis para desenvolvimento, mas ainda precisa de homologação antes do uso real:
 
-- Hash de senha no servidor, em vez de armazenar senhas em texto puro.
-- Autenticação por token e validação de solicitações protegidas.
-- Validação de dados e controles de requisição previstos na API.
-- CORS configurável para restringir origens autorizadas.
-- Modo de demonstração separado, com informações fictícias.
+- Senhas protegidas por hash no back-end; o front-end não deve armazenar senhas.
+- JWT com expiração e validação de emissor/audiência.
+- Cadastro público desativado por padrão em produção.
+- Validação de campos na API, limites de requisição e rate limiting em login/cadastro.
+- CORS restrito à origem configurada.
+- Dados fictícios isolados no modo de demonstração.
 
-### Pendências para uma versão de produção
+**Pendências que não devem ser tratadas como concluídas:** recuperação de senha por e-mail, verificação de e-mail, MFA, trilha completa de auditoria, permissões granulares por cargo, endpoints dedicados para toda a experiência do membro, testes automatizados de ponta a ponta e validação integral dos fluxos contra um banco real. Consulte [`docs/SEGURANCA-E-VALIDACAO.md`](docs/SEGURANCA-E-VALIDACAO.md) e [`docs/STATUS-E-VALIDACAO.md`](docs/STATUS-E-VALIDACAO.md).
 
-- Recuperação/verificação de e-mail e MFA, se aplicável ao modelo de acesso.
-- Permissões granulares por cargo e revisão dos limites entre igrejas/organizações.
-- Auditoria consistente de operações sensíveis.
-- Testes automatizados, testes integrados e homologação em ambiente limpo.
-- Política de privacidade, retenção de dados, backups e procedimento de restauração.
-- Revisão de segredos e configurações antes de aceitar usuários reais.
+Nunca faça commit de arquivos `.env`, credenciais reais, chaves JWT de produção, dumps de banco ou dados pessoais. Os valores de senha presentes no Compose e no `appsettings.json` são exclusivamente locais para desenvolvimento e devem ser substituídos fora desse contexto.
 
-Não publique chaves, senhas ou strings de conexão no Git. Use variáveis de ambiente e mantenha arquivos locais de configuração fora do versionamento.
+## 🧪 Validação atual
+
+O pacote recebido contém verificações estáticas e documentação prévia, porém o build completo do Vite, a compilação da API e o teste integrado com MySQL ainda precisam ser executados em um ambiente com as dependências disponíveis. Este repositório adiciona um fluxo de CI para executar os builds no GitHub Actions após o primeiro push; isso **não significa que a pipeline já passou**.
+
+Checklist recomendado antes de uma apresentação ou publicação:
+
+- [ ] `npm install` e `npm run build` em `frontend/`.
+- [ ] `dotnet restore` e `dotnet build` em `backend/ChurchManager.Api/`.
+- [ ] API conectando-se a um MySQL recém-inicializado.
+- [ ] Login, cadastro, sessão expirada e permissões administrativas.
+- [ ] Criar, listar, editar e excluir os registros dos módulos conectados.
+- [ ] Testes de uso em Android, telas estreitas e desktop.
+- [ ] Conferência visual com as telas correspondentes do Figma.
+- [ ] Configuração das variáveis de produção e teste de CORS.
+- [ ] Backup e restauração do banco antes de inserir dados reais.
+
+## 👨‍💻 Desenvolvedor e autoria
+
+**Desenvolvedor principal:** Jonathan Otiniel  
+**GitHub:** [@joots28](https://github.com/joots28)  
+**Contexto:** projeto acadêmico/TCC na área de desenvolvimento de sistemas.
+
+O projeto também é um exercício prático de evolução de software: manter a interface fiel às referências de design, dividir o código por responsabilidade, tornar os fluxos transparentes e registrar honestamente o que está pronto e o que depende de trabalho futuro.
+
+## 🗺️ Próximos passos sugeridos
+
+1. Confirmar os builds locais e deixar o CI verde.
+2. Revisar os fluxos de autenticação e o isolamento de dados entre igrejas.
+3. Corrigir e validar os detalhes de responsividade com capturas reais de telas pequenas e desktop.
+4. Definir a hospedagem do MySQL ou planejar e testar uma migração para PostgreSQL antes de escolher um provedor Postgres.
+5. Implementar recuperação de senha, verificação de e-mail, permissões granulares e auditoria conforme os requisitos do TCC.
+6. Executar testes integrados e só então publicar uma demonstração conectada a banco persistente.
 
 ## 📚 Documentação complementar
 
+- [Arquitetura e boas práticas](docs/ARQUITETURA-E-BOAS-PRATICAS.md)
+- [Decisões técnicas](docs/DECISOES-TECNICAS.md)
 - [Plano de implantação](docs/PLANO-DE-DEPLOY.md)
 - [Segurança e validação](docs/SEGURANCA-E-VALIDACAO.md)
 - [Status e validação](docs/STATUS-E-VALIDACAO.md)
-- [Esquema SQL](backend/database/schema.sql)
+- [Roteiro de validação visual](docs/ROTEIRO-DE-VALIDACAO-VISUAL.md)
+- [Relatório de transição](docs/RELATORIO-DE-TRANSICAO.md)
+- [Protótipo de referência no Figma](https://www.figma.com/design/HsCzM9y4zLXyBdFIZtn23k/TCC--Final---c%C3%B3pia-)
 
-## 🧪 Checklist de validação
+## 📄 Licença
 
-1. Instalação limpa das dependências e build do front-end com `npm run build`.
-2. Restauração e compilação da API com `dotnet restore` e `dotnet build`.
-3. Inicialização do banco a partir de um volume limpo.
-4. Teste de login, autorização, operações CRUD e tratamento de erros.
-5. Teste em telas pequenas, navegação, estados vazios e acessibilidade básica.
-6. Verificação de HTTPS, CORS, secrets e persistência no ambiente de hospedagem.
-
-Os builds completos ainda não foram confirmados nesta sessão. Essas verificações são etapas obrigatórias, não resultados já obtidos.
-
-## 🤝 Contribuição
-
-Crie uma branch por alteração, mantenha componentes e estilos organizados por responsabilidade, evite adicionar segredos e descreva as mudanças no pull request. Atualize a documentação e inclua testes pertinentes ao alterar funcionalidades.
-
-```bash
-git checkout -b feat/nome-da-melhoria
-git add .
-git commit -m "feat: descreva a melhoria"
-git push -u origin feat/nome-da-melhoria
-```
-
-## 👨‍💻 Contexto acadêmico
-
-O ChurchManager busca aplicar, em um único projeto, conhecimentos de desenvolvimento web, arquitetura cliente-servidor, APIs, persistência relacional, usabilidade, segurança e implantação. A documentação explicita o que está estruturado e o que ainda precisa ser comprovado por testes, apoiando a apresentação e a evolução responsável do TCC.
-
-<div align="center">
-
-**ChurchManager** · Organização, clareza e tecnologia a serviço da comunidade.
-
-<sub>Projeto educacional em desenvolvimento. A documentação deve acompanhar as mudanças reais do código.</sub>
-
-</div>
+Uma licença de distribuição ainda não foi definida neste repositório. Até que um arquivo `LICENSE` seja incluído, não presuma que o código está liberado para reutilização, redistribuição ou uso comercial.

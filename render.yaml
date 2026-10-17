@@ -1,0 +1,60 @@
+# Template de referência. Revise nomes, região, URLs e credenciais antes de publicar.
+services:
+  - type: web
+    name: churchmanager-api
+    runtime: docker
+    dockerfilePath: ./backend/ChurchManager.Api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://+:8080
+      - key: JWT_KEY
+        sync: false
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: AUTH_ALLOW_PUBLIC_REGISTRATION
+        value: "false"
+  - type: web
+    name: churchmanager-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_DEMO_MODE
+        value: "false"
+      - key: VITE_API_URL
+        sync: false
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=()
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: VITE_DEMO_MODE
+        value: "false"
+      - key: VITE_API_URL
+        sync: false

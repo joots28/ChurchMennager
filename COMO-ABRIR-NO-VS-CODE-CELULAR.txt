@@ -1,0 +1,19 @@
+CHURCHMANAGER — COMO ABRIR NO VS CODE PELO CELULAR
+
+1. Baixe e extraia o arquivo ZIP. O ZIP não tem senha.
+2. No VS Code ou editor compatível, escolha Open Folder / Abrir pasta.
+3. Abra a pasta ChurchManager-Projeto-Completo.
+4. Para começar a entender o front-end, abra nesta ordem:
+   - frontend/index.html
+   - frontend/src/main.jsx
+   - frontend/src/App.jsx
+   - frontend/src/features/auth/Auth.jsx
+   - frontend/src/features/home/HomePage.jsx
+   - frontend/src/features/members/MembersPage.jsx
+   - outras páginas em frontend/src/features/ (ministries, events, finance, scales, roles e settings)
+   - frontend/src/features/pages/PageRenderer.jsx
+   - frontend/src/features/management/ResourceTablePage.jsx e ManagementFields.jsx
+   - frontend/src/styles.css e os arquivos frontend/src/styles/
+5. API e banco: backend/ChurchManager.Api/ e backend/database/schema.sql.
+
+IMPORTANTE: node_modules não foi incluído de propósito; para apenas ver e editar a estrutura não é necessário. Esta cópia é código-fonte, não uma aplicação compilada pronta para execução offline.

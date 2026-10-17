@@ -1,0 +1,13 @@
+/* Estrutura compartilhada de labels/campos. As regras específicas ficam nos CSS dos controles. */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-label {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+}

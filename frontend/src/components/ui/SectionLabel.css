@@ -1,0 +1,8 @@
+/* Rótulo superior reutilizado por páginas e áreas do sistema. */
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #2563eb;
+}

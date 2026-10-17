@@ -1,0 +1,24 @@
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: #475569;
+  background: #fff;
+}
+
+.theme-toggle:hover {
+  background: #f1f5f9;
+}
+
+.auth-theme-toggle {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  z-index: 2;
+}

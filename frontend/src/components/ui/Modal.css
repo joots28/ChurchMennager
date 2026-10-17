@@ -1,0 +1,116 @@
+/* Estilos isolados do componente/área correspondente. */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #0f172a80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 80;
+}
+
+.modal {
+  width: min(100%,550px);
+  max-height: min(90vh,850px);
+  overflow: auto;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 70px #0f172a2a;
+}
+
+.modal-header {
+  padding: 19px 22px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+
+.modal-header h2 {
+  font-size: 17px;
+  margin: 0;
+  letter-spacing: -.3px;
+}
+
+.modal-body {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 17px;
+  padding: 22px;
+}
+
+.modal-body .field:has(input[name="title"]),
+.modal-body .field:has(input[name="description"]),
+.modal-body .field:has(input[name="name"]),
+.modal-body .field:has(input[name="email"]),
+.modal-body .permission-fieldset {
+  grid-column: 1/-1;
+}
+
+.modal-body .input-shell,
+.modal-body .select-shell select {
+  height: 43px;
+}
+
+.modal-footer {
+  padding: 15px 22px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+@media (max-width:540px) {
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+}
+
+@media (max-width:540px) {
+  .modal {
+    max-height: 93svh;
+    border-radius: 18px 18px 0 0;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom,0);
+  }
+}
+
+@media (max-width:540px) {
+  .modal-header {
+    padding: 17px 18px;
+  }
+}
+
+@media (max-width:540px) {
+  .modal-body {
+    grid-template-columns: 1fr;
+    padding: 18px;
+    gap: 14px;
+  }
+}
+
+@media (max-width:540px) {
+  .modal-body .field:has(input[name="title"]),
+  .modal-body .field:has(input[name="description"]),
+  .modal-body .field:has(input[name="name"]),
+  .modal-body .field:has(input[name="email"]),
+  .modal-body .permission-fieldset {
+    grid-column: auto;
+  }
+}
+
+@media (max-width:540px) {
+  .modal-footer {
+    padding: 13px 18px;
+  }
+}
+
+@media (max-width:540px) {
+  .modal-footer .btn {
+    flex: 1;
+  }
+}

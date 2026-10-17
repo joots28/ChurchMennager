@@ -1,0 +1,16 @@
+/* Estilos isolados do componente/área correspondente. */
+
+.permission-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-width: 170px;
+}
+
+.permission-tags span {
+  font-size: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 4px 6px;
+  border-radius: 5px;
+}

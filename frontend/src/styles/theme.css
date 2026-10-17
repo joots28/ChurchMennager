@@ -1,0 +1,217 @@
+/* Tema escuro opcional. A preferência é aplicada em html[data-theme="dark"]. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  color: #e5e7eb;
+  background: #0b1120;
+  --ink: #e5e7eb;
+  --muted: #cbd5e1;
+  --subtle: #94a3b8;
+  --border: #2b364a;
+  --panel: #111827;
+  --page: #0b1120;
+  --green: #4ade80;
+  --red: #f87171;
+}
+
+html[data-theme="dark"],
+html[data-theme="dark"] body,
+html[data-theme="dark"] #root {
+  color: #e5e7eb;
+  background: #0b1120;
+}
+
+html[data-theme="dark"] .app-shell,
+html[data-theme="dark"] .auth-page,
+html[data-theme="dark"] .member-portal {
+  background: #0b1120;
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] .sidebar,
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .church-switch,
+html[data-theme="dark"] .welcome-strip,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .metric-card,
+html[data-theme="dark"] .modal,
+html[data-theme="dark"] .search-box,
+html[data-theme="dark"] .input-shell,
+html[data-theme="dark"] .calendar-summary,
+html[data-theme="dark"] .member-topbar,
+html[data-theme="dark"] .member-feature-grid article,
+html[data-theme="dark"] .member-donation,
+html[data-theme="dark"] .auth-card,
+html[data-theme="dark"] .settings-panel,
+html[data-theme="dark"] .data-panel {
+  color: #e5e7eb;
+  background-color: #111827;
+  border-color: #2b364a;
+}
+
+html[data-theme="dark"] .sidebar-brand,
+html[data-theme="dark"] .sidebar-footer,
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .member-topbar,
+html[data-theme="dark"] .modal-header,
+html[data-theme="dark"] .modal-footer,
+html[data-theme="dark"] .table-scroll,
+html[data-theme="dark"] .table-scroll th,
+html[data-theme="dark"] .table-scroll td {
+  border-color: #2b364a;
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] strong,
+html[data-theme="dark"] .auth-hero h1,
+html[data-theme="dark"] .status-bar,
+html[data-theme="dark"] .field-label,
+html[data-theme="dark"] .breadcrumb strong,
+html[data-theme="dark"] .topbar-user strong,
+html[data-theme="dark"] .table-scroll,
+html[data-theme="dark"] .table-scroll td,
+html[data-theme="dark"] .modal-header h2 {
+  color: #e5e7eb;
+}
+
+html[data-theme="dark"] p,
+html[data-theme="dark"] small,
+html[data-theme="dark"] .auth-hero p,
+html[data-theme="dark"] .auth-bottom p,
+html[data-theme="dark"] .page-heading p,
+html[data-theme="dark"] .breadcrumb,
+html[data-theme="dark"] .church-switch small,
+html[data-theme="dark"] .nav-item,
+html[data-theme="dark"] .user-info small,
+html[data-theme="dark"] .topbar-user small,
+html[data-theme="dark"] .member-welcome p,
+html[data-theme="dark"] .muted {
+  color: #a7b3c5;
+}
+
+html[data-theme="dark"] .nav-item:hover,
+html[data-theme="dark"] .icon-button:hover {
+  color: #f8fafc;
+  background: #1e293b;
+}
+
+html[data-theme="dark"] .nav-item.active,
+html[data-theme="dark"] .church-avatar,
+html[data-theme="dark"] .nav-count {
+  color: #bfdbfe;
+  background: #172554;
+}
+
+html[data-theme="dark"] .nav-item.active svg {
+  color: #93c5fd;
+}
+
+html[data-theme="dark"] .btn-secondary {
+  color: #e5e7eb;
+  background: #1e293b;
+  border-color: #334155;
+}
+
+html[data-theme="dark"] .btn-secondary:hover {
+  background: #263449;
+}
+
+html[data-theme="dark"] .input-shell input,
+html[data-theme="dark"] .search-box input,
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color: #e5e7eb;
+  background-color: transparent;
+}
+
+html[data-theme="dark"] .input-shell input::placeholder,
+html[data-theme="dark"] .search-box input::placeholder {
+  color: #8290a5;
+}
+
+html[data-theme="dark"] .input-shell:focus-within,
+html[data-theme="dark"] .search-box:focus-within {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px #1e3a8a66;
+}
+
+html[data-theme="dark"] .table-scroll th {
+  color: #a7b3c5;
+  background: #172033;
+}
+
+html[data-theme="dark"] .table-scroll tr:hover td {
+  background: #172033;
+}
+
+html[data-theme="dark"] .avatar {
+  color: #dbeafe;
+  background: #263449;
+}
+
+html[data-theme="dark"] .avatar-blue {
+  color: #bfdbfe;
+  background: #1e3a8a;
+}
+
+html[data-theme="dark"] .theme-toggle {
+  color: #fbbf24;
+  border: 1px solid #334155;
+  background: #172033;
+}
+
+html[data-theme="dark"] .theme-toggle:hover {
+  background: #263449;
+}
+
+html[data-theme="dark"] .alert-error {
+  color: #fecaca;
+  background: #450a0a;
+  border-color: #7f1d1d;
+}
+
+html[data-theme="dark"] .alert-info {
+  color: #bfdbfe;
+  background: #172554;
+  border-color: #1d4ed8;
+}
+
+html[data-theme="dark"] .demo-disclaimer {
+  color: #cbd5e1;
+  background: #111827;
+  border-color: #2b364a;
+}
+
+
+
+html[data-theme="dark"] .select-shell select,
+html[data-theme="dark"] .permission-fieldset,
+html[data-theme="dark"] .security-note,
+html[data-theme="dark"] .toast,
+html[data-theme="dark"] .profile-panel,
+html[data-theme="dark"] .member-tabs button {
+  color: #e5e7eb;
+  background-color: #111827;
+  border-color: #2b364a;
+}
+html[data-theme="dark"] .member-tabs {
+  border-color: #2b364a;
+}
+html[data-theme="dark"] .member-tabs button.active {
+  color: #bfdbfe;
+  background: #172554;
+  border-color: #1d4ed8;
+}
+html[data-theme="dark"] .status-symbols i,
+html[data-theme="dark"] .status-symbols b {
+  border-color: #e5e7eb;
+}
+html[data-theme="dark"] .status-symbols b:after {
+  background: #e5e7eb;
+}
+html[data-theme="dark"] .settings-submit .btn,
+html[data-theme="dark"] .auth-submit .btn {
+  color: #ffffff;
+}

@@ -1,0 +1,38 @@
+/* Estilos isolados da área de membros ou de seu componente. */
+
+.member-donation {
+  margin-top: 18px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  padding: 20px 22px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.member-donation h2 {
+  font-size: 15px;
+  margin: 0 0 6px;
+  color: #1e3a8a;
+}
+
+.member-donation p {
+  font-size: 12px;
+  color: #1d4ed8;
+  margin: 0;
+}
+
+@media (max-width:800px) {
+  .member-donation {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width:800px) {
+  .member-donation .btn {
+    width: 100%;
+  }
+}

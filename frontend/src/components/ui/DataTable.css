@@ -1,0 +1,107 @@
+/* Estilos isolados do componente/área correspondente. */
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table-scroll table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+  text-align: left;
+}
+
+.table-scroll th {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+  background: #f8fafc;
+  padding: 12px 16px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-scroll td {
+  padding: 14px 16px;
+  color: #475569;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.table-scroll tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table-scroll tbody tr:hover {
+  background: #fcfdff;
+}
+
+.table-scroll td strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.person-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 190px;
+}
+
+.person-cell>div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.person-cell strong {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.person-cell small,
+.cell-subtitle {
+  font-size: 10px;
+  color: #94a3b8;
+  display: block;
+  margin-top: 5px;
+}
+
+.actions-head {
+  text-align: right;
+}
+
+.row-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.row-actions button {
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  border-radius: 6px;
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+}
+
+.row-actions button:hover {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+@media (max-width:540px) {
+  .table-scroll {
+    margin-bottom: 2px;
+  }
+}
+
+@media (max-width:540px) {
+  table {
+    min-width: 700px;
+  }
+}

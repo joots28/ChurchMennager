@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: churchmanager-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_local_dev
+      MYSQL_DATABASE: churchmanager
+      MYSQL_USER: churchmanager
+      MYSQL_PASSWORD: churchmanager_local_dev
+    ports:
+      - "3307:3306"
+    volumes:
+      - churchmanager_mysql:/var/lib/mysql
+      - ./backend/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+volumes:
+  churchmanager_mysql:

@@ -1,0 +1,56 @@
+/* Estilos exclusivos do campo de texto e seus adornos. */
+.input-shell {
+  height: 48px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  color: #94a3b8;
+  min-width: 0;
+}
+
+.input-shell:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px #dbeafe;
+}
+
+.input-shell input {
+  height: 100%;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
+  color: #0f172a;
+  min-width: 0;
+  font-size: 15px;
+}
+
+.input-shell input::placeholder {
+  color: #94a3b8;
+}
+
+.input-shell:focus-within input:focus-visible {
+  outline: 0;
+}
+
+.input-trailing {
+  width: 28px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: #94a3b8;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.input-trailing:hover {
+  color: #2563eb;
+  background: #eff6ff;
+}

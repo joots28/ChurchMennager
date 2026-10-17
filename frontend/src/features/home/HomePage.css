@@ -1,0 +1,285 @@
+/* Indicadores e blocos exclusivos da página inicial. */
+
+.welcome-strip {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+}
+
+.welcome-strip h2 {
+  font-size: 20px;
+  margin: 8px 0 6px;
+  letter-spacing: -.35px;
+}
+
+.welcome-strip p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.welcome-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: #475569;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr);
+  gap: 18px;
+}
+
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #2563eb;
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px;
+  white-space: nowrap;
+}
+
+.recent-list {
+  padding: 3px 20px;
+}
+
+.recent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.recent-info strong {
+  font-size: 12px;
+  white-space: normal;
+}
+
+.recent-info span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #64748b;
+  font-size: 11px;
+  white-space: normal;
+}
+
+.recent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 0;
+  border-bottom: 1px solid #f1f5f9;
+  min-width: 0;
+}
+
+.recent-row:last-child {
+  border-bottom: 0;
+}
+
+.transaction-symbol {
+  width: 35px;
+  height: 35px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.transaction-symbol.income {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.transaction-symbol.expense {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.recent-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-info span {
+  display: block;
+}
+
+.recent-row>b {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.amount-positive {
+  color: #15803d;
+}
+
+.amount-negative {
+  color: #b91c1c;
+}
+
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 17px 0 0;
+}
+
+.quick-actions>strong {
+  font-size: 12px;
+  margin-right: 6px;
+}
+
+@media (min-width:1600px) {
+  .metrics-grid {
+    gap: 18px;
+  }
+}
+
+@media (max-width:1250px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width:1250px) {
+  .dashboard-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width:800px) {
+  .welcome-strip {
+    align-items: flex-start;
+    padding: 19px;
+    flex-direction: column;
+  }
+}
+
+@media (max-width:800px) {
+  .welcome-date {
+    white-space: normal;
+  }
+}
+
+@media (max-width:800px) {
+  .metrics-grid {
+    gap: 11px;
+  }
+}
+
+@media (max-width:800px) {
+  .quick-actions {
+    align-items: stretch;
+  }
+}
+
+@media (max-width:800px) {
+  .quick-actions>strong {
+    width: 100%;
+    padding-bottom: 3px;
+  }
+}
+
+@media (max-width:800px) {
+  .quick-actions .btn {
+    flex: 1;
+  }
+}
+
+@media (max-width:800px) {
+  .dashboard-columns {
+    gap: 14px;
+  }
+}
+
+@media (max-width:800px) {
+  .recent-list {
+    padding: 0 15px;
+  }
+}
+
+@media (max-width:540px) {
+  .metrics-grid {
+    gap: 9px;
+  }
+}
+
+@media (max-width:540px) {
+  .welcome-strip h2 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width:540px) {
+  .welcome-strip p {
+    line-height: 1.5;
+  }
+}
+
+@media (max-width:540px) {
+  .welcome-date {
+    font-size: 11px;
+  }
+}
+
+@media (max-width:540px) {
+  .recent-list {
+    padding: 0 12px;
+  }
+}
+
+@media (max-width:540px) {
+  .recent-row {
+    gap: 8px;
+  }
+}
+
+@media (max-width:540px) {
+  .recent-row>b {
+    font-size: 10px;
+  }
+}
+
+@media (max-width:540px) {
+  .recent-info span {
+    font-size: 10px;
+  }
+}
+
+@media (max-width:540px) {
+  .quick-actions .btn {
+    min-width: calc(50% - 6px);
+  }
+}
+
+@media (max-width:540px) {
+  .quick-actions .btn:last-child {
+    flex-basis: 100%;
+  }
+}

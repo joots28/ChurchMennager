@@ -1,0 +1,110 @@
+/* Estilos isolados do componente/área correspondente. */
+
+.metric-card {
+  padding: 18px 18px 17px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 13px;
+  min-width: 0;
+}
+
+.metric-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.metric-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #eff6ff;
+  display: grid;
+  place-items: center;
+  color: #2563eb;
+  flex: none;
+}
+
+.metric-value {
+  font-size: 25px;
+  letter-spacing: -.7px;
+  font-weight: 750;
+  margin: 12px 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.metric-sub {
+  font-size: 11px;
+  color: #15803d;
+  line-height: 1.4;
+}
+
+.metric-sub.neutral {
+  color: #64748b;
+}
+
+@media (min-width:1600px) {
+  .metric-card {
+    padding: 21px;
+  }
+}
+
+@media (max-width:800px) {
+  .metric-card {
+    padding: 15px;
+  }
+}
+
+@media (max-width:800px) {
+  .metric-heading {
+    font-size: 11px;
+  }
+}
+
+@media (max-width:800px) {
+  .metric-icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width:800px) {
+  .metric-value {
+    font-size: 22px;
+  }
+}
+
+@media (max-width:540px) {
+  .metric-card {
+    padding: 13px 12px;
+  }
+}
+
+@media (max-width:540px) {
+  .metric-heading {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width:540px) {
+  .metric-icon {
+    width: 29px;
+    height: 29px;
+  }
+}
+
+@media (max-width:540px) {
+  .metric-value {
+    font-size: 21px;
+    margin: 10px 0 6px;
+  }
+}
+
+@media (max-width:540px) {
+  .metric-sub {
+    font-size: 10px;
+  }
+}
