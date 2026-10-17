@@ -21,7 +21,7 @@ jobs:
 
       - name: Download and safely extract package
         env:
-          PACKAGE_URL: "__DROPBOX_TEMP_DOWNLOAD_URL__"
+          PACKAGE_URL: "https://ucb4e37eb176f2d081cc85c8e2f1.dl.dropboxusercontent.com/cd/0/get/DKJoD9lJS8DlNoVA9xdF-h1rDVVk_WZ9B0lqO2EXNdcu7GG0qOUnU5YmXdcCIhxXd6zhonW0Az94UThf8uQUufuJ2trTP6ZXIblxhLAQ3Xix8kA5ONJj-JCl6Lc3Pw4qMdiMs9CYqiJmRWDm6cQscaa8oxkisIeN61QV_8sFs9UnxQ/file?c_luid=fb132612"
         run: |
           set -euo pipefail
           curl --fail --location --silent --show-error "$PACKAGE_URL" --output /tmp/ChurchManager-GitHub-Ready.zip
