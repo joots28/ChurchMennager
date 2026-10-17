@@ -1,1 +1,1 @@
-Trigger extraction of the ChurchManager package. This file is temporary.
+Retry complete ChurchManager package import with workflow files handled separately.
