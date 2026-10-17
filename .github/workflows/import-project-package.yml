@@ -21,7 +21,7 @@ jobs:
 
       - name: Download and safely extract package
         env:
-          PACKAGE_URL: "https://ucb4e37eb176f2d081cc85c8e2f1.dl.dropboxusercontent.com/cd/0/get/DKJoD9lJS8DlNoVA9xdF-h1rDVVk_WZ9B0lqO2EXNdcu7GG0qOUnU5YmXdcCIhxXd6zhonW0Az94UThf8uQUufuJ2trTP6ZXIblxhLAQ3Xix8kA5ONJj-JCl6Lc3Pw4qMdiMs9CYqiJmRWDm6cQscaa8oxkisIeN61QV_8sFs9UnxQ/file?c_luid=fb132612"
+          PACKAGE_URL: "https://uc45b99fcf065980e3a757c0c940.dl.dropboxusercontent.com/cd/0/get/DKLhB9G8zyBUQ6_sprK3MlgFNk6aWxqks7GM__EQK9GGtD2E-OQNgxNmgWzNbDxNiU-8F61vAyfel6iN_iuV__xCdUEbQ_Nn5endqGFdMHjICsvlmcN9VZHDqA3Yb-EcKYg_K-2YshCsyay5oAq_JYK4lN1vDZtKxmzIcC4QqLPP-A/file?c_luid=fb132612"
         run: |
           set -euo pipefail
           curl --fail --location --silent --show-error "$PACKAGE_URL" --output /tmp/ChurchManager-GitHub-Ready.zip
@@ -38,7 +38,7 @@ jobs:
                       raise SystemExit(f"Unsafe archive path rejected: {name}")
               archive.extractall(".")
           PY
-          rm -f .churchmanager-import.trigger .github/workflows/import-project-package.yml
+          rm -f .churchmanager-import.trigger .github/workflows/validate.yml
 
       - name: Commit project files
         run: |
