@@ -1,0 +1,54 @@
+name: Import ChurchManager package
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".churchmanager-import.trigger"
+
+permissions:
+  contents: write
+
+jobs:
+  import-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Download and safely extract package
+        env:
+          PACKAGE_URL: "__DROPBOX_TEMP_DOWNLOAD_URL__"
+        run: |
+          set -euo pipefail
+          curl --fail --location --silent --show-error "$PACKAGE_URL" --output /tmp/ChurchManager-GitHub-Ready.zip
+          python - <<'PY'
+          from pathlib import PurePosixPath
+          from zipfile import ZipFile
+
+          archive_path = "/tmp/ChurchManager-GitHub-Ready.zip"
+          with ZipFile(archive_path) as archive:
+              for item in archive.infolist():
+                  name = item.filename
+                  path = PurePosixPath(name)
+                  if path.is_absolute() or ".." in path.parts or "\\" in name:
+                      raise SystemExit(f"Unsafe archive path rejected: {name}")
+              archive.extractall(".")
+          PY
+          rm -f .churchmanager-import.trigger .github/workflows/import-project-package.yml
+
+      - name: Commit project files
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No extracted changes to commit."
+          else
+            git commit -m "feat: publish complete ChurchManager project"
+            git push origin HEAD:main
+          fi
