@@ -15,6 +15,9 @@ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 
 var connectionString = Environment.GetEnvironmentVariable("CHURCHMANAGER_DB")
     ?? builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "Server=localhost;Port=3307;Database=churchmanager;User=churchmanager;Password=churchmanager_local_dev;";
+var databaseProvider = Environment.GetEnvironmentVariable("DATABASE_PROVIDER")
+    ?? builder.Configuration["Database:Provider"]
+    ?? "MySql";
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"] ?? "";
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["Jwt:Issuer"] ?? "ChurchManager.Api";
 var jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? builder.Configuration["Jwt:Audience"] ?? "ChurchManager.Web";
@@ -30,7 +33,18 @@ if (!builder.Environment.IsDevelopment())
         throw new InvalidOperationException("Configure FRONTEND_ORIGIN com a origem HTTPS exata do front-end publicado.");
 }
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 36))));
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    if (databaseProvider.Equals("PostgreSQL", StringComparison.OrdinalIgnoreCase) ||
+        databaseProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseNpgsql(connectionString);
+    }
+    else
+    {
+        options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 36)));
+    }
+});
 builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
 builder.Services.AddControllers();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
@@ -121,8 +135,11 @@ app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "ChurchManager API" }));
 app.MapControllers();
 
-// AutoCreate existe apenas como conveniência para desenvolvimento local; produção deve usar migrações revisadas.
-if (app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Database:AutoCreate"))
+// Opt-in explícito para preparar o esquema em uma demonstração/homologação.
+// Para produção real, substituir EnsureCreated por migrações EF Core revisadas.
+var autoCreateDatabase = app.Configuration.GetValue<bool>("Database:AutoCreate") ||
+    string.Equals(Environment.GetEnvironmentVariable("DATABASE_AUTO_CREATE"), "true", StringComparison.OrdinalIgnoreCase);
+if (autoCreateDatabase)
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
