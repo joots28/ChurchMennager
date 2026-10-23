@@ -13,7 +13,7 @@ O front-end deve usar VITE_DEMO_MODE=false e VITE_API_URL apontando para a URL H
 
 ## Blueprint do Render
 
-O render.yaml declara o PostgreSQL churchmanager-tcc-db, a API Docker churchmanager-api-tcc na região Virginia e o site churchmanager-tcc. A conexão é referenciada por fromDatabase, e JWT_KEY é gerada pelo Render. Para aplicar o arquivo, crie ou sincronize um Blueprint no painel do Render apontando para este repositório e confira a prévia antes de aplicar.
+O render.yaml declara a API Docker churchmanager-api-tcc e o site churchmanager-tcc. A variável ConnectionStrings__DefaultConnection usa sync:false para manter a credencial fora do Git, e JWT_KEY é gerada pelo Render. Crie ou sincronize um Blueprint no painel do Render, confira a prévia e insira a nova URL do Neon em Render → serviço da API → Environment.
 
 A API atualmente associada ao repositório churchmanager (sem “Mennager”) não passa automaticamente a usar o código deste repositório. A configuração nova define uma API separada para ChurchMennager.
 
@@ -26,8 +26,8 @@ Database__AutoCreate=true ativa EnsureCreatedAsync para criar o esquema inicial 
 
 Após a implantação, crie uma conta de teste, entre, crie um registro, recarregue a página e confirme que o registro continua disponível. Depois repita a consulta em outro navegador ou dispositivo para confirmar que não depende do armazenamento local. Não use dados reais até confirmar retenção, backups e regras de acesso.
 
-## Atenção à retenção dos dados
+## Retenção e segurança
 
-O banco Render gratuito já existente no workspace expira em **21 de novembro de 2026**. Bancos PostgreSQL gratuitos do Render expiram após 30 dias e não têm backups gerenciados. Portanto, use essa base apenas para homologação. Antes de guardar dados reais, migre para um banco com retenção adequada e teste a restauração de backups.
+Verifique os limites e as regras de suspensão do plano Neon associado ao projeto, e mantenha uma exportação de segurança do banco antes da apresentação. Como a string de conexão foi compartilhada em uma conversa, redefina a senha da role no console Neon e atualize o segredo no Render antes de usar esse banco.
 
 Não inclua tokens, senhas reais, strings de conexão ou chaves JWT no GitHub, em screenshots ou em mensagens públicas.
