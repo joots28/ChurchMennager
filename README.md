@@ -86,7 +86,7 @@ Navegador (React + Vite)
 API REST (C# / ASP.NET Core)
         │ Entity Framework Core
         ▼
-Banco remoto PostgreSQL (Render) ou MySQL local
+Banco remoto PostgreSQL (Neon) ou MySQL local
 ```
 
 O front-end não deve acessar o banco diretamente. O navegador conversa com a API; a API valida a identidade e as permissões, aplica as regras e então consulta ou atualiza o banco.
@@ -200,7 +200,7 @@ O `render.yaml` é um **modelo inicial**, não uma implantação já realizada. 
 
 - **Front-end:** Render Static Site, raiz `frontend`, comando `npm install && npm run build`, diretório publicado `dist`.
 - **API:** Render Web Service usando Dockerfile em `backend/ChurchManager.Api/Dockerfile` e contexto da raiz do repositório.
-- **Banco:** a API mantém MySQL para desenvolvimento local e aceita PostgreSQL remoto via Npgsql. O modelo de implantação conecta a API a churchmanager-tcc-db e cria o esquema inicial somente quando Database__AutoCreate=true e o banco está vazio. **Atenção:** o PostgreSQL gratuito do Render expira 30 dias após a criação; migre para um banco com retenção e backups antes de armazenar dados importantes.
+- **Banco:** a API mantém MySQL para desenvolvimento local e aceita PostgreSQL remoto via Npgsql. Para hospedagem, use uma string de conexão do Neon somente na variável secreta `ConnectionStrings__DefaultConnection` do serviço da API. O `render.yaml` marca essa variável com `sync: false`; ela precisa ser inserida no painel do Render. `Database__AutoCreate=true` inicializa somente um banco vazio e não substitui migrações.
 - **Configuração obrigatória:** `JWT_KEY`, string de conexão e `FRONTEND_ORIGIN` devem ser informados nas variáveis de ambiente do provedor. No serviço estático, defina `VITE_API_URL` para a URL HTTPS pública da API e faça novo build.
 
 Serviços gratuitos de hospedagem podem suspender a API quando ficam ociosos. Isso pode causar demora na primeira solicitação. Não publique dados de membros ou finanças reais antes de configurar armazenamento persistente, backups, autenticação e permissões de acordo com o uso pretendido.
@@ -249,7 +249,7 @@ O projeto também é um exercício prático de evolução de software: manter a 
 1. Confirmar os builds locais e deixar o CI verde.
 2. Revisar os fluxos de autenticação e o isolamento de dados entre igrejas.
 3. Corrigir e validar os detalhes de responsividade com capturas reais de telas pequenas e desktop.
-4. Sincronizar o Blueprint do Render, validar a conexão com PostgreSQL e planejar a migração para um banco persistente antes do vencimento do banco gratuito.
+4. Sincronizar o Blueprint do Render, cadastrar a string de conexão do Neon como segredo e validar a conexão com PostgreSQL.
 5. Implementar recuperação de senha, verificação de e-mail, permissões granulares e auditoria conforme os requisitos do TCC.
 6. Executar testes integrados e só então publicar uma demonstração conectada a banco persistente.
 
