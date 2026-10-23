@@ -1,12 +1,5 @@
-# O PostgreSQL gratuito do Render expira 30 dias após a criação.
-# Use este banco somente para homologação/demonstração; migre para um banco persistente antes de guardar dados importantes.
-databases:
-  - name: churchmanager-tcc-db
-    plan: free
-    region: virginia
-    databaseName: churchmanager_tcc_db
-    user: churchmanager_tcc_db_user
-
+# O banco é gerenciado no Neon. Configure a string de conexão como variável secreta no Render.
+# Nunca coloque a senha do banco neste arquivo ou no histórico Git.
 services:
   - type: web
     name: churchmanager-api-tcc
@@ -26,9 +19,7 @@ services:
       - key: CHURCHMANAGER_DB_PROVIDER
         value: postgres
       - key: ConnectionStrings__DefaultConnection
-        fromDatabase:
-          name: churchmanager-tcc-db
-          property: connectionString
+        sync: false
       - key: Database__AutoCreate
         value: "true"
       - key: FRONTEND_ORIGIN
