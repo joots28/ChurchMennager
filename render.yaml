@@ -1,36 +1,56 @@
-# Template de referência. Revise nomes, região, URLs e credenciais antes de publicar.
+# O PostgreSQL gratuito do Render expira 30 dias após a criação.
+# Use este banco somente para homologação/demonstração; migre para um banco persistente antes de guardar dados importantes.
+databases:
+  - name: churchmanager-tcc-db
+    plan: free
+    region: virginia
+    databaseName: churchmanager_tcc_db
+    user: churchmanager_tcc_db_user
+
 services:
   - type: web
-    name: churchmanager-api
+    name: churchmanager-api-tcc
     runtime: docker
     dockerfilePath: ./backend/ChurchManager.Api/Dockerfile
     dockerContext: .
     plan: free
-    healthCheckPath: /health
+    region: virginia
+    healthCheckPath: /health/ready
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: ASPNETCORE_URLS
         value: http://+:8080
       - key: JWT_KEY
-        sync: false
+        generateValue: true
+      - key: CHURCHMANAGER_DB_PROVIDER
+        value: postgres
       - key: ConnectionStrings__DefaultConnection
-        sync: false
+        fromDatabase:
+          name: churchmanager-tcc-db
+          property: connectionString
+      - key: Database__AutoCreate
+        value: "true"
       - key: FRONTEND_ORIGIN
-        sync: false
+        value: https://churchmanager-tcc.onrender.com
       - key: AUTH_ALLOW_PUBLIC_REGISTRATION
-        value: "false"
+        value: "true"
+
   - type: web
-    name: churchmanager-web
+    name: churchmanager-tcc
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: VITE_DEMO_MODE
         value: "false"
       - key: VITE_API_URL
-        sync: false
+        value: https://churchmanager-api-tcc.onrender.com
     headers:
       - path: /*
         name: X-Frame-Options
@@ -53,8 +73,3 @@ services:
       - path: /assets/*
         name: Cache-Control
         value: public, max-age=31536000, immutable
-    envVars:
-      - key: VITE_DEMO_MODE
-        value: "false"
-      - key: VITE_API_URL
-        sync: false
