@@ -4,7 +4,7 @@
 
 ### Gestão organizada para comunidades e instituições religiosas
 
-**Projeto acadêmico / TCC · Web responsiva · React + C# / ASP.NET Core + MySQL**
+**Projeto acadêmico / TCC · Web responsiva · React + C# / ASP.NET Core + PostgreSQL remoto / MySQL local**
 
 [Objetivo](#-objetivo-do-projeto) · [Funcionalidades](#-funcionalidades) · [Tecnologias](#-tecnologias) · [Executar localmente](#-executar-localmente) · [Arquitetura](#-arquitetura) · [Implantação](#-implantação) · [Segurança](#-segurança-e-limitações)
 
@@ -64,15 +64,15 @@ Os itens abaixo descrevem o código desta versão. Quando uma função ainda é 
 ### Back-end
 
 - **C# e ASP.NET Core (.NET 8)** para a API REST.
-- **Entity Framework Core** com provedor **Pomelo para MySQL**.
+- **Entity Framework Core** com provedores **Pomelo para MySQL local** e **Npgsql para PostgreSQL remoto**.
 - **JWT Bearer** para autenticação de chamadas protegidas.
 - `PasswordHasher` do ASP.NET Core para armazenar hashes de senha em vez de texto puro.
 - Validação no servidor, limitação de tentativas em endpoints de autenticação, autorização por função administrativa e isolamento por igreja nos CRUDs preparados.
 
 ### Banco de dados e ambiente
 
-- **MySQL 8** para desenvolvimento nesta versão.
-- **Docker Compose** para subir o banco local.
+- **MySQL 8** para desenvolvimento local e **PostgreSQL** para hospedagem remota.
+- **Docker Compose** para subir o MySQL local.
 - **Dockerfile** da API e `render.yaml` como ponto de partida para implantação no Render.
 
 ## 🧱 Arquitetura
@@ -86,7 +86,7 @@ Navegador (React + Vite)
 API REST (C# / ASP.NET Core)
         │ Entity Framework Core
         ▼
-Banco de dados MySQL
+Banco remoto PostgreSQL (Render) ou MySQL local
 ```
 
 O front-end não deve acessar o banco diretamente. O navegador conversa com a API; a API valida a identidade e as permissões, aplica as regras e então consulta ou atualiza o banco.
@@ -200,7 +200,7 @@ O `render.yaml` é um **modelo inicial**, não uma implantação já realizada. 
 
 - **Front-end:** Render Static Site, raiz `frontend`, comando `npm install && npm run build`, diretório publicado `dist`.
 - **API:** Render Web Service usando Dockerfile em `backend/ChurchManager.Api/Dockerfile` e contexto da raiz do repositório.
-- **Banco:** nesta versão a API exige MySQL compatível com a configuração atual. O PostgreSQL gratuito do Render não é compatível diretamente com o provedor atual e expira após 30 dias; não deve ser usado como destino sem uma migração real do código e do esquema.
+- **Banco:** a API mantém MySQL para desenvolvimento local e aceita PostgreSQL remoto via Npgsql. O modelo de implantação conecta a API a churchmanager-tcc-db e cria o esquema inicial somente quando Database__AutoCreate=true e o banco está vazio. **Atenção:** o PostgreSQL gratuito do Render expira 30 dias após a criação; migre para um banco com retenção e backups antes de armazenar dados importantes.
 - **Configuração obrigatória:** `JWT_KEY`, string de conexão e `FRONTEND_ORIGIN` devem ser informados nas variáveis de ambiente do provedor. No serviço estático, defina `VITE_API_URL` para a URL HTTPS pública da API e faça novo build.
 
 Serviços gratuitos de hospedagem podem suspender a API quando ficam ociosos. Isso pode causar demora na primeira solicitação. Não publique dados de membros ou finanças reais antes de configurar armazenamento persistente, backups, autenticação e permissões de acordo com o uso pretendido.
@@ -211,7 +211,7 @@ A base inclui mecanismos de segurança úteis para desenvolvimento, mas ainda pr
 
 - Senhas protegidas por hash no back-end; o front-end não deve armazenar senhas.
 - JWT com expiração e validação de emissor/audiência.
-- Cadastro público desativado por padrão em produção.
+- Cadastro público controlado por variável de ambiente; o modelo de implantação o habilita para permitir novas contas.
 - Validação de campos na API, limites de requisição e rate limiting em login/cadastro.
 - CORS restrito à origem configurada.
 - Dados fictícios isolados no modo de demonstração.
@@ -249,7 +249,7 @@ O projeto também é um exercício prático de evolução de software: manter a 
 1. Confirmar os builds locais e deixar o CI verde.
 2. Revisar os fluxos de autenticação e o isolamento de dados entre igrejas.
 3. Corrigir e validar os detalhes de responsividade com capturas reais de telas pequenas e desktop.
-4. Definir a hospedagem do MySQL ou planejar e testar uma migração para PostgreSQL antes de escolher um provedor Postgres.
+4. Sincronizar o Blueprint do Render, validar a conexão com PostgreSQL e planejar a migração para um banco persistente antes do vencimento do banco gratuito.
 5. Implementar recuperação de senha, verificação de e-mail, permissões granulares e auditoria conforme os requisitos do TCC.
 6. Executar testes integrados e só então publicar uma demonstração conectada a banco persistente.
 
