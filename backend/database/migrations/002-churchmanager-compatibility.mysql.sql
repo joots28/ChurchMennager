@@ -26,6 +26,12 @@ ALTER TABLE Cargo
 
 UPDATE Cargo SET PermissoesJson = '[]' WHERE PermissoesJson IS NULL OR PermissoesJson = '';\nALTER TABLE Cargo MODIFY COLUMN PermissoesJson LONGTEXT NOT NULL;
 
+-- Impede que a exclusão de um cargo apague contas de usuário vinculadas.
+ALTER TABLE Usuario DROP FOREIGN KEY FK_Usuario_Cargo_IdCargo;
+ALTER TABLE Usuario
+  ADD CONSTRAINT FK_Usuario_Cargo_IdCargo
+    FOREIGN KEY (IdCargo) REFERENCES Cargo(IdCargo) ON DELETE RESTRICT;
+
 -- Preserva os campos originais de Evento e acrescenta os dados usados pela interface.
 ALTER TABLE Evento
   ADD COLUMN Ministerio VARCHAR(120) NOT NULL DEFAULT 'Todos',
