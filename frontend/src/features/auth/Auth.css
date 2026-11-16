@@ -24,58 +24,6 @@
   width: 100%;
 }
 
-.status-bar {
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  color: #0f172a;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.status-symbols {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.status-symbols i {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid #0f172a;
-  border-radius: 3px;
-  display: block;
-  position: relative;
-}
-
-.status-symbols i:first-child {
-  height: 9px;
-  border-radius: 50% 50% 0 0;
-  border-bottom: 0;
-}
-
-.status-symbols b {
-  display: block;
-  width: 20px;
-  height: 10px;
-  border: 1.5px solid #0f172a;
-  border-radius: 2px;
-  position: relative;
-}
-
-.status-symbols b:after {
-  content: "";
-  position: absolute;
-  right: -3px;
-  top: 2px;
-  height: 4px;
-  width: 2px;
-  background: #0f172a;
-  border-radius: 0 1px 1px 0;
-}
-
 .auth-brand {
   height: 56px;
   display: flex;

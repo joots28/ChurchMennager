@@ -29,8 +29,8 @@ public sealed class ChurchSettingsController(AppDbContext db) : ControllerBase
         var email = request?.Email?.Trim().ToLowerInvariant() ?? string.Empty;
         var phone = request?.Phone?.Trim() ?? string.Empty;
         var address = request?.Address?.Trim() ?? string.Empty;
-        if (name.Length is < 2 or > 180)
-            return BadRequest(new { message = "Informe o nome da igreja com 2 a 180 caracteres." });
+        if (name.Length is < 2 or > 100)
+            return BadRequest(new { message = "Informe o nome da igreja com 2 a 100 caracteres." });
         if (email.Length > 254 || !new EmailAddressAttribute().IsValid(email))
             return BadRequest(new { message = "Informe um e-mail institucional válido." });
         if (phone.Length > 40 || address.Length > 250)

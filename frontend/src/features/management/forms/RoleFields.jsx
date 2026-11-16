@@ -11,7 +11,7 @@ export default function RoleFields({ form, changeForm }) {
 
   return (
     <>
-      <InputField label="Nome do cargo" name="name" value={form.name} onChange={changeForm} maxLength={120} minLength={2} required />
+      <InputField label="Nome do cargo" name="name" value={form.name} onChange={changeForm} maxLength={50} minLength={2} required />
       <InputField label="Descrição (opcional)" name="description" value={form.description} onChange={changeForm} maxLength={500} />
       <fieldset className="permission-fieldset">
         <legend>Permissões registradas</legend>

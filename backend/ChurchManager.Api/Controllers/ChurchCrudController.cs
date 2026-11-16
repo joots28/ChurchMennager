@@ -20,6 +20,19 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
     {
         if (CurrentChurchId is not int churchId) return Unauthorized();
         var list = await Db.Set<T>().AsNoTracking().Where(x => x.ChurchId == churchId).OrderByDescending(x => x.Id).ToListAsync();
+
+        if (typeof(T) == typeof(ChurchRole))
+        {
+            var counts = await Db.Users
+                .Where(x => x.ChurchId == churchId)
+                .GroupBy(x => x.CargoId)
+                .Select(group => new { CargoId = group.Key, Total = group.Count() })
+                .ToDictionaryAsync(x => x.CargoId, x => x.Total);
+
+            foreach (var role in list.Cast<ChurchRole>())
+                role.Users = counts.GetValueOrDefault(role.Id);
+        }
+
         return Ok(list);
     }
     [HttpGet("{id:int}")]
@@ -53,6 +66,14 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
         var createdAt = current.CreatedAt;
         if (input is ChurchRole incomingRole && current is ChurchRole existingRole)
             incomingRole.Users = existingRole.Users; // esse contador não é definido pelo navegador
+        if (input is ChurchScale incomingScale && current is ChurchScale existingScale)
+            incomingScale.EventId = existingScale.EventId; // o formulário não altera o vínculo com o evento legado
+        if (input is ChurchEvent incomingEvent && current is ChurchEvent existingEvent)
+        {
+            incomingEvent.IsRestricted = existingEvent.IsRestricted;
+            incomingEvent.RecurrenceType = existingEvent.RecurrenceType;
+        }
+
         Db.Entry(current).CurrentValues.SetValues(input);
         current.Id = id; current.ChurchId = churchId; current.CreatedAt = createdAt;
         await Db.SaveChangesAsync();
@@ -64,7 +85,16 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
         if (CurrentChurchId is not int churchId) return Unauthorized();
         var current = await Db.Set<T>().FirstOrDefaultAsync(x => x.Id == id && x.ChurchId == churchId);
         if (current is null) return NotFound();
-        Db.Remove(current); await Db.SaveChangesAsync(); return NoContent();
+
+        // Um cargo referenciado por uma conta não pode ser removido.
+        // Isso também protege bancos legados que possuam dados anteriores à API.
+        if (typeof(T) == typeof(ChurchRole)
+            && await Db.Users.AnyAsync(x => x.CargoId == id && x.ChurchId == churchId))
+            return Conflict(new { message = "Este cargo está vinculado a usuários e não pode ser excluído." });
+
+        Db.Remove(current);
+        await Db.SaveChangesAsync();
+        return NoContent();
     }
 }
 
