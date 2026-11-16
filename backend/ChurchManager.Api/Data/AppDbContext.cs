@@ -39,7 +39,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
             entity.Property(x => x.CargoId).HasColumnName("IdCargo");
             entity.Property(x => x.Name).HasColumnName("Nome").HasMaxLength(100).IsRequired();
-            entity.Property(x => x.Email).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Email).HasMaxLength(254).IsRequired();
             entity.Property(x => x.PasswordHash).HasColumnName("SenhaHash").HasMaxLength(255).IsRequired();
             entity.Property(x => x.Role).HasColumnName("Perfil").HasMaxLength(80).IsRequired();
             entity.Property(x => x.CreatedAt);
