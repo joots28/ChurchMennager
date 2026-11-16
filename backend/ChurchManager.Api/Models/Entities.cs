@@ -70,6 +70,7 @@ public sealed class ChurchEvent : ChurchEntity
     public string Location { get; set; } = string.Empty;
     public string Ministry { get; set; } = "Todos";
     public string Status { get; set; } = "Planejado";
+    public bool IsRestricted { get; set; }
 }
 
 public sealed class FinanceTransaction : ChurchEntity
