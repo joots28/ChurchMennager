@@ -68,6 +68,11 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
             incomingRole.Users = existingRole.Users; // esse contador não é definido pelo navegador
         if (input is ChurchScale incomingScale && current is ChurchScale existingScale)
             incomingScale.EventId = existingScale.EventId; // o formulário não altera o vínculo com o evento legado
+        if (input is ChurchEvent incomingEvent && current is ChurchEvent existingEvent)
+        {
+            incomingEvent.IsRestricted = existingEvent.IsRestricted;
+            incomingEvent.RecurrenceType = existingEvent.RecurrenceType;
+        }
 
         Db.Entry(current).CurrentValues.SetValues(input);
         current.Id = id; current.ChurchId = churchId; current.CreatedAt = createdAt;
