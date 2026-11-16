@@ -20,6 +20,19 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
     {
         if (CurrentChurchId is not int churchId) return Unauthorized();
         var list = await Db.Set<T>().AsNoTracking().Where(x => x.ChurchId == churchId).OrderByDescending(x => x.Id).ToListAsync();
+
+        if (typeof(T) == typeof(ChurchRole))
+        {
+            var counts = await Db.Users
+                .Where(x => x.ChurchId == churchId)
+                .GroupBy(x => x.CargoId)
+                .Select(group => new { CargoId = group.Key, Total = group.Count() })
+                .ToDictionaryAsync(x => x.CargoId, x => x.Total);
+
+            foreach (var role in list.Cast<ChurchRole>())
+                role.Users = counts.GetValueOrDefault(role.Id);
+        }
+
         return Ok(list);
     }
     [HttpGet("{id:int}")]
