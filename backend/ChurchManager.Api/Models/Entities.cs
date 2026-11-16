@@ -72,6 +72,10 @@ public sealed class ChurchEvent : ChurchEntity
     public string Ministry { get; set; } = "Todos";
     public string Status { get; set; } = "Planejado";
     public bool IsRestricted { get; set; }
+
+    // Campo obrigatório no schema legado; o formulário atual trabalha com "Nenhuma".
+    [JsonIgnore]
+    public string RecurrenceType { get; set; } = "Nenhuma";
 }
 
 public sealed class FinanceTransaction : ChurchEntity
