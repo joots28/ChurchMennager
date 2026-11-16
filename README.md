@@ -134,29 +134,50 @@ ChurchManager/
 
 - Node.js LTS e npm.
 - .NET SDK 8.
-- Docker Desktop ou Docker Engine com Docker Compose.
+- MySQL Server 8.0 em execução.
+- O banco compartilhado do grupo, com as tabelas originais `Igreja`, `Usuario`, `Cargo`, `Doacao`, `Evento`, `Escala`, `Permissao`, `Presenca_Evento` e `Participacao_Escala`.
 
-### 1. Iniciar o MySQL
+### 1. Preparar o banco MySQL do grupo
 
-Na raiz do projeto:
+Faça backup do banco antes de qualquer alteração. O ChurchManager reaproveita as tabelas existentes e adiciona somente os campos e tabelas complementares necessários aos módulos atuais.
 
-```bash
-docker compose up -d mysql
+Execute **uma única vez** o script:
+
+```text
+backend/database/migrations/002-churchmanager-compatibility.mysql.sql
 ```
 
-O banco é publicado localmente na porta `3307`. O script `backend/database/schema.sql` é aplicado na inicialização de um volume novo. Se o volume já existir, o MySQL não reaplica automaticamente o script de inicialização.
-
-### 2. Iniciar a API
-
-Em um terminal:
+No MySQL Workbench, abra o script e execute-o conectado ao servidor local. Pela linha de comando:
 
 ```bash
-cd backend/ChurchManager.Api
-dotnet restore
-dotnet run --urls http://localhost:5080
+mysql -u root -p < backend/database/migrations/002-churchmanager-compatibility.mysql.sql
 ```
 
-A API deve responder ao teste de saúde em `http://localhost:5080/health`. Em ambiente de desenvolvimento, a documentação Swagger fica disponível quando a API estiver executando.
+O script usa o banco `GestaoIgrejaTCC`. Se o banco do grupo tiver outro nome, ajuste a instrução `USE` no início do arquivo antes de executar. Não execute esse script novamente depois de aplicado.
+
+### 2. Configurar e iniciar a API
+
+Na raiz do repositório, configure a conexão por User Secrets. Substitua a senha pelo valor configurado no seu MySQL local:
+
+```bash
+dotnet user-secrets init --project backend/ChurchManager.Api/ChurchManager.Api.csproj
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Port=3306;Database=GestaoIgrejaTCC;User=root;Password=SUA_SENHA;" --project backend/ChurchManager.Api/ChurchManager.Api.csproj
+```
+
+Depois inicie a API:
+
+```bash
+dotnet restore backend/ChurchManager.Api/ChurchManager.Api.csproj
+dotnet run --project backend/ChurchManager.Api/ChurchManager.Api.csproj --urls http://localhost:5080
+```
+
+Verifique:
+
+- API: `http://localhost:5080/health`
+- Banco conectado: `http://localhost:5080/health/ready`
+- Swagger: `http://localhost:5080/swagger` (somente em desenvolvimento)
+
+O arquivo `appsettings.json` contém apenas uma conexão local de exemplo. Senhas reais devem ficar em User Secrets ou variáveis de ambiente, nunca em commits.
 
 ### 3. Iniciar o front-end
 
@@ -166,33 +187,44 @@ Em outro terminal:
 cd frontend
 ```
 
-Crie seu arquivo local a partir do exemplo (PowerShell):
+Crie o arquivo de ambiente local (PowerShell):
 
 ```powershell
 Copy-Item .env.example .env.local
 ```
 
-Depois execute:
+Confirme que o arquivo contém:
+
+```dotenv
+VITE_DEMO_MODE=false
+VITE_API_URL=http://localhost:5080
+```
+
+Instale dependências e inicie o Vite:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Abra o endereço local informado pelo Vite (normalmente `http://localhost:5173`). A API precisa estar ativa e o banco disponível para testar o modo conectado.
+Abra o endereço informado pelo Vite, normalmente `http://localhost:5173`.
+
+### 4. Instalar como PWA
+
+Em produção, o ChurchManager publica o manifesto e registra o service worker. Abra o endereço HTTPS do site no Chrome/Edge e use **Instalar ChurchManager** ou **Adicionar à tela inicial**.
+
+O cache offline mantém a estrutura estática da aplicação e seus recursos. **Dados, login e operações CRUD continuam exigindo conexão com a API e o MySQL**; respostas da API não são guardadas no cache offline.
 
 ### Modo de demonstração sem API
 
-No `frontend/.env.local`, defina:
+Para testar somente as telas com dados fictícios, defina em `frontend/.env.local`:
 
 ```dotenv
 VITE_DEMO_MODE=true
 VITE_API_URL=http://localhost:5080
 ```
 
-Reinicie o Vite após alterar variáveis. O modo de demonstração trabalha com dados fictícios no navegador; não é adequado para informações reais e não serve como autenticação de produção. O acesso de demonstração aparece na tela de login quando esse modo é ativado.
-
-Para voltar ao modo conectado, defina `VITE_DEMO_MODE=false` e deixe a API e o banco funcionando.
+Reinicie o Vite após alterar variáveis. Esse modo não consulta o MySQL e não deve ser usado com dados reais.
 
 ## ☁️ Implantação
 
