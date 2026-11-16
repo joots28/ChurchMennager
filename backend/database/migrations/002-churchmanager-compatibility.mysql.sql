@@ -20,11 +20,11 @@ ALTER TABLE Usuario
 -- Campos complementares do módulo de cargos/permissões, mantendo Permissao e Cargo existentes.
 ALTER TABLE Cargo
   ADD COLUMN Descricao VARCHAR(500) NOT NULL DEFAULT '',
-  ADD COLUMN PermissoesJson LONGTEXT NOT NULL,
+  ADD COLUMN PermissoesJson LONGTEXT NULL,
   ADD COLUMN QuantidadeUsuarios INT NOT NULL DEFAULT 0,
   ADD COLUMN CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6);
 
-UPDATE Cargo SET PermissoesJson = '[]' WHERE PermissoesJson IS NULL OR PermissoesJson = '';
+UPDATE Cargo SET PermissoesJson = '[]' WHERE PermissoesJson IS NULL OR PermissoesJson = '';\nALTER TABLE Cargo MODIFY COLUMN PermissoesJson LONGTEXT NOT NULL;
 
 -- Preserva os campos originais de Evento e acrescenta os dados usados pela interface.
 ALTER TABLE Evento
@@ -44,7 +44,7 @@ ALTER TABLE Escala
   ADD COLUMN Titulo VARCHAR(180) NOT NULL DEFAULT '',
   ADD COLUMN Ministerio VARCHAR(120) NOT NULL DEFAULT '',
   ADD COLUMN DataHora DATETIME(6) NULL,
-  ADD COLUMN MembrosJson LONGTEXT NOT NULL,
+  ADD COLUMN MembrosJson LONGTEXT NULL,
   ADD COLUMN Status VARCHAR(40) NOT NULL DEFAULT 'Pendente',
   ADD COLUMN CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6);
 
@@ -62,11 +62,11 @@ SET
   Titulo = CASE WHEN Titulo = '' THEN NomeMinisterio ELSE Titulo END,
   Ministerio = CASE WHEN Ministerio = '' THEN NomeMinisterio ELSE Ministerio END,
   DataHora = COALESCE(DataHora, CURRENT_TIMESTAMP(6)),
-  MembrosJson = CASE WHEN MembrosJson = '' THEN '[]' ELSE MembrosJson END;
+  MembrosJson = CASE WHEN MembrosJson IS NULL OR MembrosJson = '' THEN '[]' ELSE MembrosJson END;
 
 ALTER TABLE Escala
   MODIFY COLUMN IdIgreja INT NOT NULL,
-  MODIFY COLUMN DataHora DATETIME(6) NOT NULL;
+  MODIFY COLUMN DataHora DATETIME(6) NOT NULL,\n  MODIFY COLUMN MembrosJson LONGTEXT NOT NULL;
 
 -- O vínculo com Evento passa a ser opcional para permitir escalas independentes.
 ALTER TABLE Escala DROP FOREIGN KEY FK_Escala_Evento_IdEvento;
