@@ -66,6 +66,9 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
         var createdAt = current.CreatedAt;
         if (input is ChurchRole incomingRole && current is ChurchRole existingRole)
             incomingRole.Users = existingRole.Users; // esse contador não é definido pelo navegador
+        if (input is ChurchScale incomingScale && current is ChurchScale existingScale)
+            incomingScale.EventId = existingScale.EventId; // o formulário não altera o vínculo com o evento legado
+
         Db.Entry(current).CurrentValues.SetValues(input);
         current.Id = id; current.ChurchId = churchId; current.CreatedAt = createdAt;
         await Db.SaveChangesAsync();
