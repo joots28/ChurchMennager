@@ -64,7 +64,16 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
         if (CurrentChurchId is not int churchId) return Unauthorized();
         var current = await Db.Set<T>().FirstOrDefaultAsync(x => x.Id == id && x.ChurchId == churchId);
         if (current is null) return NotFound();
-        Db.Remove(current); await Db.SaveChangesAsync(); return NoContent();
+
+        // Um cargo referenciado por uma conta não pode ser removido.
+        // Isso também protege bancos legados que possuam dados anteriores à API.
+        if (typeof(T) == typeof(ChurchRole)
+            && await Db.Users.AnyAsync(x => x.CargoId == id && x.ChurchId == churchId))
+            return Conflict(new { message = "Este cargo está vinculado a usuários e não pode ser excluído." });
+
+        Db.Remove(current);
+        await Db.SaveChangesAsync();
+        return NoContent();
     }
 }
 
