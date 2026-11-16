@@ -31,7 +31,7 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
         var name = request.Name?.Trim() ?? string.Empty;
         var email = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
         var churchName = request.ChurchName?.Trim() ?? string.Empty;
-        if (name.Length is < 2 or > 160 || churchName.Length is < 2 or > 100 || email.Length > 254 || !new EmailAddressAttribute().IsValid(email))
+        if (name.Length is < 2 or > 100 || churchName.Length is < 2 or > 100 || email.Length > 254 || !new EmailAddressAttribute().IsValid(email))
             return BadRequest(new { message = "Informe nome, e-mail válido e nome da igreja dentro dos limites indicados." });
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 12 || request.Password.Length > 128)
             return BadRequest(new { message = "A senha deve ter entre 12 e 128 caracteres." });
@@ -138,7 +138,7 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
 }
 
 public sealed record RegisterRequest(
-    [property: Required, StringLength(160, MinimumLength = 2)] string Name,
+    [property: Required, StringLength(100, MinimumLength = 2)] string Name,
     [property: Required, EmailAddress, StringLength(254)] string Email,
     [property: Required, StringLength(128, MinimumLength = 12)] string Password,
     [property: Required, StringLength(100, MinimumLength = 2)] string ChurchName);
