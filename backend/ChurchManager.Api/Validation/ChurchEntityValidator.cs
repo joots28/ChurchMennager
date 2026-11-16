@@ -21,9 +21,9 @@ public static class ChurchEntityValidator
         Ministry x => Required(x.Name, "Nome do ministério", 160) ??
                       Optional(x.Description, "Descrição", 500) ?? Optional(x.Coordinator, "Coordenador", 160) ??
                       Choice(x.Status, "Status", "Ativo", "Inativo"),
-        ChurchEvent x => Required(x.Title, "Nome do evento", 180) ??
+        ChurchEvent x => Required(x.Title, "Nome do evento", 100) ??
                          (x.StartsAt == default ? "Informe a data e o horário do evento." : null) ??
-                         Optional(x.Description, "Descrição", 1000) ?? Optional(x.Location, "Local", 180) ??
+                         Optional(x.Description, "Descrição", 1000) ?? Optional(x.Location, "Local", 255) ??
                          Choice(x.Ministry, "Ministério", "Todos", "Louvor", "Recepção", "Ministério Infantil", "Comunicação", "Assistência", "Jovens") ??
                          Choice(x.Status, "Status", "Planejado", "Confirmado", "Cancelado"),
         FinanceTransaction x => Required(x.Description, "Descrição", 180) ??
@@ -33,7 +33,7 @@ public static class ChurchEntityValidator
                                 Choice(x.Category, "Categoria", "Ofertas", "Contribuições", "Doações", "Despesas fixas", "Manutenção", "Eventos", "Outros") ??
                                 Choice(x.TransactionType, "Tipo de movimentação", "Income", "Expense") ??
                                 Choice(x.Method, "Método", "PIX", "Transferência", "Dinheiro", "Cartão", "Outro"),
-        ChurchRole x => Required(x.Name, "Nome do cargo", 120) ?? Optional(x.Description, "Descrição", 500) ?? ValidatePermissions(x.PermissionsJson),
+        ChurchRole x => Required(x.Name, "Nome do cargo", 50) ?? Optional(x.Description, "Descrição", 500) ?? ValidatePermissions(x.PermissionsJson),
         ChurchScale x => Required(x.Title, "Nome da escala", 180) ??
                          Choice(x.Ministry, "Ministério", "Louvor", "Recepção", "Ministério Infantil", "Comunicação", "Assistência", "Jovens") ??
                          (x.StartsAt == default ? "Informe a data e o horário da escala." : null) ??
@@ -50,7 +50,7 @@ public static class ChurchEntityValidator
             case ChurchEvent x: x.Title = Trim(x.Title); x.Description = Trim(x.Description); x.Location = Trim(x.Location); x.Ministry = Trim(x.Ministry); x.Status = Trim(x.Status); break;
             case FinanceTransaction x: x.Description = Trim(x.Description); x.Category = Trim(x.Category); x.TransactionType = Trim(x.TransactionType); x.Method = Trim(x.Method); break;
             case ChurchRole x: x.Name = Trim(x.Name); x.Description = Trim(x.Description); x.PermissionsJson = string.IsNullOrWhiteSpace(x.PermissionsJson) ? "[]" : x.PermissionsJson.Trim(); break;
-            case ChurchScale x: x.Title = Trim(x.Title); x.Ministry = Trim(x.Ministry); x.Status = Trim(x.Status); x.AssignedMembersJson = string.IsNullOrWhiteSpace(x.AssignedMembersJson) ? "[]" : x.AssignedMembersJson.Trim(); break;
+            case ChurchScale x: x.Title = Trim(x.Title); x.Ministry = Trim(x.Ministry); x.Status = Trim(x.Status); x.AssignedMembersJson = string.IsNullOrWhiteSpace(x.AssignedMembersJson) ? "[]" : x.AssignedMembersJson.Trim(); x.LegacyMinistryName = Trim(x.Ministry); break;
         }
     }
 
