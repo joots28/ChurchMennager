@@ -94,6 +94,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Ministry).HasColumnName("Ministerio").HasMaxLength(120).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
             entity.Property(x => x.IsRestricted).HasColumnName("Restrito");
+            entity.Property(x => x.RecurrenceType).HasColumnName("TipoRepeticao").HasMaxLength(50).IsRequired();
             entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.ChurchId);
             entity.HasIndex(x => new { x.ChurchId, x.StartsAt });
