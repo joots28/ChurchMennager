@@ -91,13 +91,13 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
         if (identifier.Contains('@'))
         {
             var email = identifier.ToLowerInvariant();
-            user = await db.Users.SingleOrDefaultAsync(x => x.Email == email, cancellationToken);
+            user = await db.Users.SingleOrDefaultAsync(x => x.Email == email && x.IsActive, cancellationToken);
         }
         else
         {
             // Nome não é necessariamente único: só autentica se houver exatamente uma correspondência.
             var matches = await db.Users
-                .Where(x => x.Name.ToUpper() == identifier.ToUpper())
+                .Where(x => x.Name.ToUpper() == identifier.ToUpper() && x.IsActive)
                 .Take(2)
                 .ToListAsync(cancellationToken);
             user = matches.Count == 1 ? matches[0] : null;
@@ -127,7 +127,13 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Name, user.Name),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role),
+            // A interface possui dois perfis de acesso: membro e administração.
+            // Cargos como Tesouraria/Líder continuam no payload do usuário, mas usam
+            // a política administrativa da API até existir RBAC granular.
+            new Claim(ClaimTypes.Role,
+                string.Equals(user.Role, "Membro", StringComparison.OrdinalIgnoreCase)
+                    ? "Membro"
+                    : "Administrador"),
             new Claim("church_id", user.ChurchId.ToString())
         };
         var credentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256);
