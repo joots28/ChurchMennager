@@ -36,7 +36,7 @@ export default function Auth({ onLogin, onRegister, theme, onToggleTheme, initia
   };
   const title = screen === 'login' ? 'Bem-vindo de volta' : screen === 'register' ? (step === 1 ? 'Comece grátis' : 'Cadastrar igreja') : 'Recuperar Senha';
   const subtitle = screen === 'login' ? 'Acesse sua conta para gerenciar as atividades, finanças e ministérios da sua comunidade.' : screen === 'register' ? (step === 1 ? 'Passo 1 de 2: Dados do administrador da conta.' : 'Passo 2 de 2: Informe o nome da igreja que será cadastrada.') : 'Digite seu e-mail cadastrado. A recuperação automática por e-mail ainda não está disponível.';
-  return <main className="auth-page"><section className="auth-card"><div className="auth-top"><ThemeToggle theme={theme} onToggle={onToggleTheme} className="auth-theme-toggle" /><div className="status-bar"><span>9:41</span><span className="status-symbols"><i/><i/><b/></span></div><div className="auth-brand"><Brand /></div>
+  return <main className="auth-page"><section className="auth-card"><div className="auth-top"><ThemeToggle theme={theme} onToggle={onToggleTheme} className="auth-theme-toggle" /><div className="auth-brand"><Brand /></div>
     {screen === 'recover' && <button className="back-link" type="button" onClick={() => { setScreen('login'); setError(''); setNotice(''); }}><span>‹</span> Voltar ao login</button>}
     <div className="auth-hero">{screen === 'recover' && <div className="recover-icon"><Icon name="lock" size={24} /></div>}{screen === 'register' && <div className="steps"><i className={step >= 1 ? 'active' : ''}/><i className={step >= 2 ? 'active' : ''}/></div>}<h1>{title}</h1><p>{subtitle}</p></div>
     <form id="auth-form" className="auth-form" onSubmit={submit}>
