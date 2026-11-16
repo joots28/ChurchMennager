@@ -232,10 +232,11 @@ O `render.yaml` é um **modelo inicial**, não uma implantação já realizada. 
 
 - **Front-end:** Render Static Site, raiz `frontend`, comando `npm install && npm run build`, diretório publicado `dist`.
 - **API:** Render Web Service usando Dockerfile em `backend/ChurchManager.Api/Dockerfile` e contexto da raiz do repositório.
-- **Banco:** a API mantém MySQL para desenvolvimento local e aceita PostgreSQL remoto via Npgsql. Para hospedagem, use uma string de conexão do Neon somente na variável secreta `ConnectionStrings__DefaultConnection` do serviço da API. O `render.yaml` marca essa variável com `sync: false`; ela precisa ser inserida no painel do Render. `Database__AutoCreate=true` inicializa somente um banco vazio e não substitui migrações.
+- **Banco local do TCC:** MySQL 8 com o banco `GestaoIgrejaTCC` preparado pelo grupo e o script complementar descrito na seção de execução local. A API local conecta a esse banco sem substituir as tabelas originais.
+- **Banco publicado no Render:** o serviço em nuvem não consegue acessar `localhost` do computador do desenvolvedor. Para publicar a API, é necessário um banco remoto acessível pelo Render; o blueprint atual prevê PostgreSQL/Neon via Npgsql. Essa base remota é independente do MySQL local e não recebe automaticamente os registros do computador do grupo. Configure a conexão como variável secreta `ConnectionStrings__DefaultConnection`; `Database__AutoCreate=true` inicializa somente um banco remoto vazio.
 - **Configuração obrigatória:** `JWT_KEY`, string de conexão e `FRONTEND_ORIGIN` devem ser informados nas variáveis de ambiente do provedor. No serviço estático, defina `VITE_API_URL` para a URL HTTPS pública da API e faça novo build.
 
-Serviços gratuitos de hospedagem podem suspender a API quando ficam ociosos. Isso pode causar demora na primeira solicitação. Não publique dados de membros ou finanças reais antes de configurar armazenamento persistente, backups, autenticação e permissões de acordo com o uso pretendido.
+Serviços gratuitos de hospedagem podem suspender a API quando ficam ociosos. Isso pode causar demora na primeira solicitação. O PWA pode ser instalado pelo endereço HTTPS do site, mas a disponibilidade offline cobre somente a interface estática; login e dados continuam dependendo da API e do banco. Não publique dados de membros ou finanças reais antes de configurar armazenamento persistente, backups, autenticação e permissões de acordo com o uso pretendido.
 
 ## 🔐 Segurança e limitações conhecidas
 
