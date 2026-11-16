@@ -42,6 +42,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Email).HasMaxLength(254).IsRequired();
             entity.Property(x => x.PasswordHash).HasColumnName("SenhaHash").HasMaxLength(255).IsRequired();
             entity.Property(x => x.Role).HasColumnName("Perfil").HasMaxLength(80).IsRequired();
+            entity.Property(x => x.IsActive).HasColumnName("Ativo");
             entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.Email).IsUnique();
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
