@@ -21,7 +21,7 @@ public sealed class MemberPortalController(AppDbContext db) : ControllerBase
         if (CurrentChurchId is not int churchId) return Unauthorized();
 
         var events = await db.Events.AsNoTracking()
-            .Where(x => x.ChurchId == churchId)
+            .Where(x => x.ChurchId == churchId && !x.IsRestricted)
             .OrderBy(x => x.StartsAt)
             .ToListAsync(cancellationToken);
 
@@ -43,21 +43,27 @@ public sealed class MemberPortalController(AppDbContext db) : ControllerBase
     {
         if (CurrentChurchId is not int churchId) return Unauthorized();
 
+        var currentName = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(currentName)) return Unauthorized();
+
         var scales = await db.Scales.AsNoTracking()
             .Where(x => x.ChurchId == churchId)
             .OrderBy(x => x.StartsAt)
             .ToListAsync(cancellationToken);
 
-        return Ok(scales.Select(x => new
-        {
-            id = x.Id,
-            title = x.Title,
-            ministry = x.Ministry,
-            date = x.StartsAt.ToString("yyyy-MM-dd"),
-            time = x.StartsAt.ToString("HH:mm"),
-            status = x.Status,
-            members = ParseMembers(x.AssignedMembersJson)
-        }));
+        return Ok(scales
+            .Select(x => new { Scale = x, Members = ParseMembers(x.AssignedMembersJson) })
+            .Where(x => x.Members.Any(name => string.Equals(name, currentName, StringComparison.OrdinalIgnoreCase)))
+            .Select(x => new
+            {
+                id = x.Scale.Id,
+                title = x.Scale.Title,
+                ministry = x.Scale.Ministry,
+                date = x.Scale.StartsAt.ToString("yyyy-MM-dd"),
+                time = x.Scale.StartsAt.ToString("HH:mm"),
+                status = x.Scale.Status,
+                members = string.Join(", ", x.Members)
+            }));
     }
 
     [HttpGet("settings")]
@@ -79,16 +85,16 @@ public sealed class MemberPortalController(AppDbContext db) : ControllerBase
             });
     }
 
-    private static string ParseMembers(string? json)
+    private static List<string> ParseMembers(string? json)
     {
         try
         {
-            var members = JsonSerializer.Deserialize<List<string>>(string.IsNullOrWhiteSpace(json) ? "[]" : json);
-            return members is null ? string.Empty : string.Join(", ", members);
+            return JsonSerializer.Deserialize<List<string>>(string.IsNullOrWhiteSpace(json) ? "[]" : json)
+                ?? new List<string>();
         }
         catch (JsonException)
         {
-            return string.Empty;
+            return new List<string>();
         }
     }
 }
