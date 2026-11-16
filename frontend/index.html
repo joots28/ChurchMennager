@@ -1,15 +1,38 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><script>
-(function () {
-  const url = new URL(window.location.href);
-  if (url.searchParams.get("utm_source") === "chatgpt.com") {
-    url.searchParams.delete("utm_source");
-    const query = url.searchParams.toString();
-    window.history.replaceState(
-      window.history.state,
-      "",
-      url.pathname + (query ? "?" + query : "") + url.hash
-    );
-  }
-})();
-</script><meta name="theme-color" content="#2563eb"/><meta name="description" content="ChurchManager — gestão organizada para comunidades e igrejas"/><link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/><title>ChurchManager</title></head><body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body></html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="ChurchManager — gestão organizada para comunidades e igrejas" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="ChurchManager" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/icons/churchmanager-512.svg" />
+    <link rel="apple-touch-icon" href="/icons/churchmanager-192.svg" />
+    <script>
+      (function () {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("utm_source") === "chatgpt.com") {
+          url.searchParams.delete("utm_source");
+          const query = url.searchParams.toString();
+          window.history.replaceState(
+            window.history.state,
+            "",
+            url.pathname + (query ? "?" + query : "") + url.hash
+          );
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <title>ChurchManager</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
