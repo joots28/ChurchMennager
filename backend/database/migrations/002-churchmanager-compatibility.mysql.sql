@@ -11,6 +11,10 @@ ALTER TABLE Igreja
   ADD COLUMN Telefone VARCHAR(40) NOT NULL DEFAULT '',
   ADD COLUMN CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6);
 
+UPDATE Igreja SET Endereco = '' WHERE Endereco IS NULL;
+ALTER TABLE Igreja
+  MODIFY COLUMN Endereco VARCHAR(255) NOT NULL DEFAULT '';
+
 -- O ChurchManager guarda a função de autorização em Perfil e mantém o vínculo legado IdCargo.
 ALTER TABLE Usuario
   MODIFY COLUMN Email VARCHAR(254) NOT NULL,
