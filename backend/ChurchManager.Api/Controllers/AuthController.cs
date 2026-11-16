@@ -149,11 +149,11 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
 }
 
 public sealed record RegisterRequest(
-    [property: Required, StringLength(100, MinimumLength = 2)] string Name,
-    [property: Required, EmailAddress, StringLength(254)] string Email,
-    [property: Required, StringLength(128, MinimumLength = 12)] string Password,
-    [property: Required, StringLength(100, MinimumLength = 2)] string ChurchName);
+    [param: Required, StringLength(100, MinimumLength = 2)] string Name,
+    [param: Required, EmailAddress, StringLength(254)] string Email,
+    [param: Required, StringLength(128, MinimumLength = 12)] string Password,
+    [param: Required, StringLength(100, MinimumLength = 2)] string ChurchName);
 
 public sealed record LoginRequest(
-    [property: Required, StringLength(254, MinimumLength = 1)] string Identifier,
-    [property: Required, StringLength(128, MinimumLength = 1)] string Password);
+    [param: Required, StringLength(254, MinimumLength = 1)] string Identifier,
+    [param: Required, StringLength(128, MinimumLength = 1)] string Password);
