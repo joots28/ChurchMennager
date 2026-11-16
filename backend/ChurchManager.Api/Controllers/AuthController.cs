@@ -31,7 +31,7 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
         var name = request.Name?.Trim() ?? string.Empty;
         var email = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
         var churchName = request.ChurchName?.Trim() ?? string.Empty;
-        if (name.Length is < 2 or > 160 || churchName.Length is < 2 or > 180 || email.Length > 254 || !new EmailAddressAttribute().IsValid(email))
+        if (name.Length is < 2 or > 160 || churchName.Length is < 2 or > 100 || email.Length > 254 || !new EmailAddressAttribute().IsValid(email))
             return BadRequest(new { message = "Informe nome, e-mail válido e nome da igreja dentro dos limites indicados." });
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 12 || request.Password.Length > 128)
             return BadRequest(new { message = "A senha deve ter entre 12 e 128 caracteres." });
@@ -45,7 +45,25 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
             var church = new Church { Name = churchName, Email = email };
             db.Churches.Add(church);
             await db.SaveChangesAsync(cancellationToken);
-            var user = new AppUser { ChurchId = church.Id, Name = name, Email = email, Role = "Administrador" };
+            var adminRole = new ChurchRole
+            {
+                ChurchId = church.Id,
+                Name = "Administrador",
+                Description = "Cargo inicial da conta administradora.",
+                PermissionsJson = "[\"Membros\",\"Eventos\",\"Financeiro\",\"Relatórios\",\"Configurações\",\"Perfil\",\"Escalas\"]",
+                Users = 1
+            };
+            db.Roles.Add(adminRole);
+            await db.SaveChangesAsync(cancellationToken);
+
+            var user = new AppUser
+            {
+                ChurchId = church.Id,
+                CargoId = adminRole.Id,
+                Name = name,
+                Email = email,
+                Role = "Administrador"
+            };
             user.PasswordHash = hasher.HashPassword(user, request.Password);
             db.Users.Add(user);
             await db.SaveChangesAsync(cancellationToken);
@@ -123,7 +141,7 @@ public sealed record RegisterRequest(
     [property: Required, StringLength(160, MinimumLength = 2)] string Name,
     [property: Required, EmailAddress, StringLength(254)] string Email,
     [property: Required, StringLength(128, MinimumLength = 12)] string Password,
-    [property: Required, StringLength(180, MinimumLength = 2)] string ChurchName);
+    [property: Required, StringLength(100, MinimumLength = 2)] string ChurchName);
 
 public sealed record LoginRequest(
     [property: Required, StringLength(254, MinimumLength = 1)] string Identifier,
