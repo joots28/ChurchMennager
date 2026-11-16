@@ -75,6 +75,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Description).HasColumnName("Descricao").HasMaxLength(500).IsRequired();
             entity.Property(x => x.Coordinator).HasColumnName("Coordenador").HasMaxLength(160).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.IsRestricted).HasColumnName("Restrito");
             entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.ChurchId);
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
