@@ -24,8 +24,8 @@ export default function SettingsPage({ data, setData, demo, tell }) {
         phone: String(data.settings.phone ?? '').trim(),
         address: String(data.settings.address ?? '').trim(),
       };
-      if (settings.churchName.length < 2 || settings.churchName.length > 180) {
-        throw new Error('O nome da igreja deve ter de 2 a 180 caracteres.');
+      if (settings.churchName.length < 2 || settings.churchName.length > 100) {
+        throw new Error('O nome da igreja deve ter de 2 a 100 caracteres.');
       }
       if (settings.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(settings.email)) {
         throw new Error('Informe um e-mail institucional válido.');
@@ -57,7 +57,7 @@ export default function SettingsPage({ data, setData, demo, tell }) {
       </div>
 
       <form className="settings-grid" onSubmit={saveSettings}>
-        <InputField label="Nome da igreja" name="churchName" value={data.settings.churchName} onChange={updateSetting} minLength={2} maxLength={180} required />
+        <InputField label="Nome da igreja" name="churchName" value={data.settings.churchName} onChange={updateSetting} minLength={2} maxLength={100} required />
         <InputField label="E-mail institucional" name="email" type="email" value={data.settings.email} onChange={updateSetting} maxLength={254} required />
         <InputField label="Telefone (opcional)" name="phone" value={data.settings.phone} onChange={updateSetting} maxLength={40} />
         <InputField label="Endereço (opcional)" name="address" value={data.settings.address} onChange={updateSetting} maxLength={250} />
