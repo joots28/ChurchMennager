@@ -91,7 +91,12 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
         if (identifier.Contains('@'))
         {
             var email = identifier.ToLowerInvariant();
-            user = await db.Users.SingleOrDefaultAsync(x => x.Email == email && x.IsActive, cancellationToken);
+            var emailMatches = await db.Users
+                .Where(x => x.Email == email && x.IsActive)
+                .Take(2)
+                .ToListAsync(cancellationToken);
+            // Bancos legados podem conter e-mails duplicados antes da criação do índice único.
+            user = emailMatches.Count == 1 ? emailMatches[0] : null;
         }
         else
         {
