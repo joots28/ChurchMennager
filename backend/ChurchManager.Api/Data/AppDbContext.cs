@@ -27,7 +27,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Email).HasMaxLength(254).IsRequired();
             entity.Property(x => x.Phone).HasColumnName("Telefone").HasMaxLength(40).IsRequired();
             entity.Property(x => x.Address).HasColumnName("Endereco").HasMaxLength(255).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.Email);
         });
 
@@ -42,7 +42,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Email).HasMaxLength(100).IsRequired();
             entity.Property(x => x.PasswordHash).HasColumnName("SenhaHash").HasMaxLength(255).IsRequired();
             entity.Property(x => x.Role).HasColumnName("Perfil").HasMaxLength(80).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.Email).IsUnique();
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<ChurchRole>().WithMany().HasForeignKey(x => x.CargoId).OnDelete(DeleteBehavior.Restrict);
@@ -60,7 +60,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Ministry).HasColumnName("Ministerio").HasMaxLength(120).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
             entity.Property(x => x.Role).HasColumnName("Cargo").HasMaxLength(80).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.ChurchId);
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
         });
@@ -75,7 +75,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Description).HasColumnName("Descricao").HasMaxLength(500).IsRequired();
             entity.Property(x => x.Coordinator).HasColumnName("Coordenador").HasMaxLength(160).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.ChurchId);
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
         });
@@ -88,11 +88,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
             entity.Property(x => x.Title).HasColumnName("Titulo").HasMaxLength(100).IsRequired();
             entity.Property(x => x.Description).HasColumnName("Descricao").IsRequired();
-            entity.Property(x => x.StartsAt).HasColumnName("DataHora").HasColumnType("datetime(6)");
+            entity.Property(x => x.StartsAt).HasColumnName("DataHora");
             entity.Property(x => x.Location).HasColumnName("Local").HasMaxLength(255).IsRequired();
             entity.Property(x => x.Ministry).HasColumnName("Ministerio").HasMaxLength(120).IsRequired();
             entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.ChurchId);
             entity.HasIndex(x => new { x.ChurchId, x.StartsAt });
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
@@ -108,9 +108,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Category).HasColumnName("Categoria").HasMaxLength(100).IsRequired();
             entity.Property(x => x.Amount).HasColumnName("Valor").HasPrecision(12, 2);
             entity.Property(x => x.TransactionType).HasColumnName("Tipo").HasMaxLength(30).IsRequired();
-            entity.Property(x => x.TransactionDate).HasColumnName("DataMovimentacao").HasColumnType("datetime(6)");
+            entity.Property(x => x.TransactionDate).HasColumnName("DataMovimentacao");
             entity.Property(x => x.Method).HasColumnName("Metodo").HasMaxLength(50).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.ChurchId);
             entity.HasIndex(x => new { x.ChurchId, x.TransactionDate });
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
@@ -126,7 +126,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.Description).HasColumnName("Descricao").HasMaxLength(500).IsRequired();
             entity.Property(x => x.PermissionsJson).HasColumnName("PermissoesJson").HasColumnType("text").IsRequired();
             entity.Property(x => x.Users).HasColumnName("QuantidadeUsuarios");
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.ChurchId);
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
         });
@@ -139,12 +139,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
             entity.Property(x => x.Title).HasColumnName("Titulo").HasMaxLength(180).IsRequired();
             entity.Property(x => x.Ministry).HasColumnName("Ministerio").HasMaxLength(120).IsRequired();
-            entity.Property(x => x.StartsAt).HasColumnName("DataHora").HasColumnType("datetime(6)");
+            entity.Property(x => x.StartsAt).HasColumnName("DataHora");
             entity.Property(x => x.AssignedMembersJson).HasColumnName("MembrosJson").HasColumnType("text").IsRequired();
             entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
             entity.Property(x => x.EventId).HasColumnName("IdEvento");
             entity.Property(x => x.LegacyMinistryName).HasColumnName("NomeMinisterio").HasMaxLength(100).IsRequired();
-            entity.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+            entity.Property(x => x.CreatedAt);
             entity.HasIndex(x => x.ChurchId);
             entity.HasIndex(x => new { x.ChurchId, x.StartsAt });
             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
