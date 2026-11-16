@@ -24,7 +24,8 @@ ALTER TABLE Cargo
   ADD COLUMN QuantidadeUsuarios INT NOT NULL DEFAULT 0,
   ADD COLUMN CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6);
 
-UPDATE Cargo SET PermissoesJson = '[]' WHERE PermissoesJson IS NULL OR PermissoesJson = '';\nALTER TABLE Cargo MODIFY COLUMN PermissoesJson LONGTEXT NOT NULL;
+UPDATE Cargo SET PermissoesJson = '[]' WHERE PermissoesJson IS NULL OR PermissoesJson = '';
+ALTER TABLE Cargo MODIFY COLUMN PermissoesJson LONGTEXT NOT NULL;
 
 -- Impede que a exclusão de um cargo apague contas de usuário vinculadas.
 ALTER TABLE Usuario DROP FOREIGN KEY FK_Usuario_Cargo_IdCargo;
@@ -72,7 +73,8 @@ SET
 
 ALTER TABLE Escala
   MODIFY COLUMN IdIgreja INT NOT NULL,
-  MODIFY COLUMN DataHora DATETIME(6) NOT NULL,\n  MODIFY COLUMN MembrosJson LONGTEXT NOT NULL;
+  MODIFY COLUMN DataHora DATETIME(6) NOT NULL,
+  MODIFY COLUMN MembrosJson LONGTEXT NOT NULL;
 
 -- O vínculo com Evento passa a ser opcional para permitir escalas independentes.
 ALTER TABLE Escala DROP FOREIGN KEY FK_Escala_Evento_IdEvento;
