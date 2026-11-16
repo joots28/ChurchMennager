@@ -182,6 +182,12 @@ if (app.Configuration.GetValue<bool>("Database:AutoCreate"))
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.EnsureCreatedAsync();
+
+    // EnsureCreated skips schema creation when a database already contains any tables.
+    // The PostgreSQL service may contain the original schema, so add missing fields/tables
+    // without dropping or renaming existing data.
+    if (usesPostgres)
+        await PostgresSchemaBootstrap.EnsureAsync(db);
 }
 app.Run();
 
