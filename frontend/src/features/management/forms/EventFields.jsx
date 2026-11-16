@@ -4,7 +4,7 @@ import SelectField from '../../../components/ui/SelectField.jsx';
 export default function EventFields({ form, changeForm }) {
   return (
     <>
-      <InputField label="Nome do evento" name="title" value={form.title} onChange={changeForm} maxLength={180} minLength={2} required />
+      <InputField label="Nome do evento" name="title" value={form.title} onChange={changeForm} maxLength={100} minLength={2} required />
       <InputField label="Data" name="date" type="date" value={form.date} onChange={changeForm} required />
       <InputField label="Horário" name="time" type="time" value={form.time} onChange={changeForm} required />
       <InputField label="Local (opcional)" name="location" value={form.location} onChange={changeForm} maxLength={180} />
