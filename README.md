@@ -10,6 +10,8 @@
 
 </div>
 
+> **Arquitetura oficial definida em 23/11/2026:** PostgreSQL no Supabase + API ASP.NET Core/C# no Render + React/Vite no Vercel. O plano executável de migração, banco, segurança, deploy e tarefas do Antigravity está em [docs/GUIA-ADAPTACAO-POSTGRES-SUPABASE-ANTIGRAVITY.md](docs/GUIA-ADAPTACAO-POSTGRES-SUPABASE-ANTIGRAVITY.md). As referências antigas a MySQL, Neon e frontend no Render devem ser tratadas como histórico até a adaptação ser concluída.
+
 ---
 
 ## 📌 Sobre o projeto
