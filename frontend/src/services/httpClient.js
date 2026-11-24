@@ -2,16 +2,18 @@ const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5080').replac
 export const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === 'true';
 
 export async function api(path, options = {}) {
+  const token = sessionStorage.getItem('churchmanager-token');
   const response = await fetch(API_URL + path, {
     ...options,
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: 'Bearer ' + token } : {}),
       ...(options.headers || {})
     }
   });
 
   if (response.status === 401) {
+    sessionStorage.removeItem('churchmanager-token');
     sessionStorage.removeItem('churchmanager-session');
     if (!path.startsWith('/api/auth/')) {
       window.dispatchEvent(new CustomEvent('churchmanager:unauthorized'));

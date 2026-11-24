@@ -88,7 +88,7 @@ var allowedOrigins = originCandidates.Where(x => !string.IsNullOrWhiteSpace(x))
     .Cast<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
 builder.Services.AddCors(options => options.AddPolicy("Frontend", policy => policy
-    .WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
+    .WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -128,15 +128,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ClockSkew = TimeSpan.FromSeconds(15)
-    };
-    options.Events = new JwtBearerEvents
-    {
-        OnMessageReceived = context =>
-        {
-            if (context.Request.Cookies.TryGetValue("churchmanager-auth", out var cookieToken))
-                context.Token = cookieToken;
-            return Task.CompletedTask;
-        }
     };
 });
 builder.Services.AddAuthorization();

@@ -21,8 +21,6 @@ public sealed class AuthController(
     IPasswordHasher<AppUser> hasher,
     IWebHostEnvironment environment) : ControllerBase
 {
-    private const string AuthCookie = "churchmanager-auth";
-
     [AllowAnonymous]
     [EnableRateLimiting("Auth")]
     [HttpPost("register")]
@@ -143,13 +141,9 @@ public sealed class AuthController(
         return Ok(CreateSession(user));
     }
 
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("logout")]
-    public IActionResult Logout()
-    {
-        Response.Cookies.Delete(AuthCookie, BuildCookieOptions());
-        return NoContent();
-    }
+    public IActionResult Logout() => NoContent();
 
     private AuthResponse CreateSession(AppUser user)
     {
@@ -182,24 +176,9 @@ public sealed class AuthController(
             expires: DateTime.UtcNow.AddMinutes(60),
             signingCredentials: credentials);
 
-        Response.Cookies.Append(
-            AuthCookie,
-            new JwtSecurityTokenHandler().WriteToken(token),
-            BuildCookieOptions());
-
-        return new AuthResponse(user.Name, user.Email, isAdministrator ? "Administrador" : "Membro");
+        var tokenValue = new JwtSecurityTokenHandler().WriteToken(token);
+        return new AuthResponse(tokenValue, user.Name, user.Email, isAdministrator ? "Administrador" : "Membro");
     }
-
-    private CookieOptions BuildCookieOptions() => new()
-    {
-        HttpOnly = true,
-        Secure = !environment.IsDevelopment(),
-        SameSite = SameSiteMode.Strict,
-        IsEssential = true,
-        Path = "/",
-        MaxAge = TimeSpan.FromMinutes(60),
-        Expires = DateTimeOffset.UtcNow.AddMinutes(60)
-    };
 }
 
 public sealed record RegisterRequest(
@@ -213,4 +192,4 @@ public sealed record LoginRequest(
     [param: Required, StringLength(128, MinimumLength = 1)] string Password,
     [param: StringLength(16)] string Portal = "admin");
 
-public sealed record AuthResponse(string Name, string Email, string Role);
+public sealed record AuthResponse(string Token, string Name, string Email, string Role);
