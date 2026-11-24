@@ -1,5 +1,5 @@
-# O banco é gerenciado no Neon. Configure a string de conexão como variável secreta no Render.
-# Nunca coloque a senha do banco neste arquivo ou no histórico Git.
+# Um único repositório GitHub fornece o código dos dois serviços Render.
+# Supabase é o único banco remoto; nunca comite connection strings ou senhas.
 services:
   - type: web
     name: churchmanager-api-tcc
@@ -14,18 +14,18 @@ services:
         value: Production
       - key: ASPNETCORE_URLS
         value: http://+:8080
-      - key: JWT_KEY
-        generateValue: true
       - key: CHURCHMANAGER_DB_PROVIDER
         value: postgres
       - key: ConnectionStrings__DefaultConnection
         sync: false
       - key: Database__AutoCreate
-        value: "true"
+        value: "false"
+      - key: JWT_KEY
+        generateValue: true
       - key: FRONTEND_ORIGIN
         value: https://churchmanager-tcc.onrender.com
       - key: AUTH_ALLOW_PUBLIC_REGISTRATION
-        value: "true"
+        value: "false"
 
   - type: web
     name: churchmanager-tcc
