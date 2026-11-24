@@ -1,0 +1,2632 @@
+From e1893b8100e3dac103fcf5fdbbdf53fcfa7d2f54 Mon Sep 17 00:00:00 2001
+From: otiniel <jonathanotiniel@gmail.com>
+Date: Tue, 24 Nov 2026 00:12:45 +0000
+Subject: [PATCH] =?UTF-8?q?chore(backend):=20sincroniza=20API=20com=20adap?=
+ =?UTF-8?q?ta=C3=A7=C3=A3o=20PostgreSQL=20(migrations=20EF=20Core,=20Progr?=
+ =?UTF-8?q?am,=20AppDbContext)?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ backend/ChurchManager.Api/.env.example        |  38 +-
+ .../ChurchManager.Api.csproj                  |  16 +-
+ .../Controllers/AuthController.cs             |  30 +-
+ .../Controllers/MemberPortalController.cs     |  52 +-
+ .../ChurchManager.Api/Data/AppDbContext.cs    | 206 +++----
+ ...23232145_InitialPostgresSchema.Designer.cs | 576 ++++++++++++++++++
+ .../20261123232145_InitialPostgresSchema.cs   | 327 ++++++++++
+ .../Migrations/AppDbContextModelSnapshot.cs   | 573 +++++++++++++++++
+ backend/ChurchManager.Api/Program.cs          |  58 +-
+ backend/ChurchManager.Api/appsettings.json    |   5 +-
+ .../migrations/InitialPostgresSchema.sql      | 267 ++++++++
+ backend/database/schema.sql                   | 190 ++++--
+ 12 files changed, 2078 insertions(+), 260 deletions(-)
+ create mode 100644 backend/ChurchManager.Api/Migrations/20261123232145_InitialPostgresSchema.Designer.cs
+ create mode 100644 backend/ChurchManager.Api/Migrations/20261123232145_InitialPostgresSchema.cs
+ create mode 100644 backend/ChurchManager.Api/Migrations/AppDbContextModelSnapshot.cs
+ create mode 100644 backend/database/migrations/InitialPostgresSchema.sql
+
+diff --git a/backend/ChurchManager.Api/.env.example b/backend/ChurchManager.Api/.env.example
+index 7154a77..08ae3aa 100644
+--- a/backend/ChurchManager.Api/.env.example
++++ b/backend/ChurchManager.Api/.env.example
+@@ -1,12 +1,26 @@
+-# Exemplo local. Este arquivo não é carregado automaticamente pelo ASP.NET Core.
+-# O docker-compose.yml inicia MySQL na porta 3307.
+-CHURCHMANAGER_DB_PROVIDER=mysql
+-CHURCHMANAGER_DB=Server=localhost;Port=3307;Database=churchmanager;User=churchmanager;Password=churchmanager_local_dev;
+-
+-# PostgreSQL remoto (somente como variável de ambiente do serviço; nunca comite a senha):
+-# CHURCHMANAGER_DB_PROVIDER=postgres
+-# ConnectionStrings__DefaultConnection=postgresql://USUARIO:SENHA@HOST:5432/BASE
+-# JWT_KEY=gere-uma-chave-aleatoria-com-pelo-menos-32-caracteres
+-# FRONTEND_ORIGIN=https://seu-site.onrender.com
+-# Database__AutoCreate=true  (somente para iniciar uma base nova e vazia)
+-# AUTH_ALLOW_PUBLIC_REGISTRATION=true
++# ChurchManager API — Exemplo de Variáveis de Ambiente (.env.example)
++# Nunca coloque credenciais reais ou senhas neste arquivo ou no repositório Git.
++
++# Provedor oficial de banco de dados (único da versão final: PostgreSQL)
++CHURCHMANAGER_DB_PROVIDER=postgres
++
++# Conexão com o PostgreSQL do Supabase (URL ou String de Conexão Npgsql):
++# Exemplo Session Mode / Direct connection:
++ConnectionStrings__DefaultConnection=Host=db.PROJECT_REF.supabase.co;Port=5432;Database=postgres;Username=postgres;Password=SEGREDO_AQUI;SSL Mode=Require;Trust Server Certificate=true;
++
++# Chave secreta JWT (mínimo de 32 caracteres exclusivos e aleatórios)
++JWT_KEY=substitua-por-uma-chave-aleatoria-forte-com-mais-de-32-chars
++
++# Emissor e audiência do JWT
++JWT_ISSUER=ChurchManager.Api
++JWT_AUDIENCE=ChurchManager.Web
++
++# Origem HTTPS exata do Frontend no Vercel (sem barra final)
++FRONTEND_ORIGIN=https://churchmanager.vercel.app
++
++# Controle de cadastro administrativo público
++# Defina como false após a criação da conta administrativa inicial
++AUTH_ALLOW_PUBLIC_REGISTRATION=false
++
++# Controle de execução automática de migrações EF Core na inicialização
++Database__AutoMigrate=false
+diff --git a/backend/ChurchManager.Api/ChurchManager.Api.csproj b/backend/ChurchManager.Api/ChurchManager.Api.csproj
+index 07679f3..282d390 100644
+--- a/backend/ChurchManager.Api/ChurchManager.Api.csproj
++++ b/backend/ChurchManager.Api/ChurchManager.Api.csproj
+@@ -1,10 +1,16 @@
+ <Project Sdk="Microsoft.NET.Sdk.Web">
+-  <PropertyGroup><TargetFramework>net8.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings></PropertyGroup>
++  <PropertyGroup>
++    <TargetFramework>net8.0</TargetFramework>
++    <Nullable>enable</Nullable>
++    <ImplicitUsings>enable</ImplicitUsings>
++  </PropertyGroup>
+   <ItemGroup>
+-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.32" />
+-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.32"><PrivateAssets>all</PrivateAssets><IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets></PackageReference>
+-    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.3" />
++    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
++    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
++      <PrivateAssets>all</PrivateAssets>
++      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
++    </PackageReference>
+     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
+-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.0" />
++    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+   </ItemGroup>
+ </Project>
+diff --git a/backend/ChurchManager.Api/Controllers/AuthController.cs b/backend/ChurchManager.Api/Controllers/AuthController.cs
+index e2823f3..c3ed090 100644
+--- a/backend/ChurchManager.Api/Controllers/AuthController.cs
++++ b/backend/ChurchManager.Api/Controllers/AuthController.cs
+@@ -42,16 +42,18 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
+         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+         try
+         {
+-            var church = new Church { Name = churchName, Email = email };
++            var church = new Church { Name = churchName, Email = email, CreatedAt = DateTime.UtcNow };
+             db.Churches.Add(church);
+             await db.SaveChangesAsync(cancellationToken);
++
+             var adminRole = new ChurchRole
+             {
+                 ChurchId = church.Id,
+                 Name = "Administrador",
+                 Description = "Cargo inicial da conta administradora.",
+                 PermissionsJson = "[\"Membros\",\"Eventos\",\"Financeiro\",\"Relatórios\",\"Configurações\",\"Perfil\",\"Escalas\"]",
+-                Users = 1
++                Users = 1,
++                CreatedAt = DateTime.UtcNow
+             };
+             db.Roles.Add(adminRole);
+             await db.SaveChangesAsync(cancellationToken);
+@@ -62,10 +64,26 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
+                 CargoId = adminRole.Id,
+                 Name = name,
+                 Email = email,
+-                Role = "Administrador"
++                Role = "Administrador",
++                IsActive = true,
++                CreatedAt = DateTime.UtcNow
+             };
+             user.PasswordHash = hasher.HashPassword(user, request.Password);
+             db.Users.Add(user);
++
++            // Vincula e registra o membro correspondente na igreja
++            var member = new Member
++            {
++                ChurchId = church.Id,
++                Name = name,
++                Email = email,
++                Role = "Administrador",
++                Ministry = "Todos",
++                Status = "Ativo",
++                CreatedAt = DateTime.UtcNow
++            };
++            db.Members.Add(member);
++
+             await db.SaveChangesAsync(cancellationToken);
+             await transaction.CommitAsync(cancellationToken);
+             return Ok(ToResponse(user));
+@@ -95,12 +113,10 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
+                 .Where(x => x.Email == email && x.IsActive)
+                 .Take(2)
+                 .ToListAsync(cancellationToken);
+-            // Bancos legados podem conter e-mails duplicados antes da criação do índice único.
+             user = emailMatches.Count == 1 ? emailMatches[0] : null;
+         }
+         else
+         {
+-            // Nome não é necessariamente único: só autentica se houver exatamente uma correspondência.
+             var matches = await db.Users
+                 .Where(x => x.Name.ToUpper() == identifier.ToUpper() && x.IsActive)
+                 .Take(2)
+@@ -121,7 +137,6 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
+ 
+     private AuthResponse ToResponse(AppUser user)
+     {
+-        // A mesma variável de ambiente usada para validar o JWT é prioritária também para assiná-lo.
+         var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? config["Jwt:Key"];
+         if (string.IsNullOrWhiteSpace(key) || key.Length < 32)
+             throw new InvalidOperationException("JWT_KEY não foi configurada corretamente.");
+@@ -132,9 +147,6 @@ public sealed class AuthController(AppDbContext db, IConfiguration config, IPass
+             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+             new Claim(ClaimTypes.Name, user.Name),
+             new Claim(ClaimTypes.Email, user.Email),
+-            // A interface possui dois perfis de acesso: membro e administração.
+-            // Cargos como Tesouraria/Líder continuam no payload do usuário, mas usam
+-            // a política administrativa da API até existir RBAC granular.
+             new Claim(ClaimTypes.Role,
+                 string.Equals(user.Role, "Membro", StringComparison.OrdinalIgnoreCase)
+                     ? "Membro"
+diff --git a/backend/ChurchManager.Api/Controllers/MemberPortalController.cs b/backend/ChurchManager.Api/Controllers/MemberPortalController.cs
+index 5767d6d..3255f5c 100644
+--- a/backend/ChurchManager.Api/Controllers/MemberPortalController.cs
++++ b/backend/ChurchManager.Api/Controllers/MemberPortalController.cs
+@@ -43,8 +43,27 @@ public sealed class MemberPortalController(AppDbContext db) : ControllerBase
+     {
+         if (CurrentChurchId is not int churchId) return Unauthorized();
+ 
+-        var currentName = User.FindFirstValue(ClaimTypes.Name) ?? string.Empty;
+-        if (string.IsNullOrWhiteSpace(currentName)) return Unauthorized();
++        var currentEmail = (User.FindFirstValue(ClaimTypes.Email) ?? string.Empty).Trim().ToLowerInvariant();
++        var currentName = (User.FindFirstValue(ClaimTypes.Name) ?? string.Empty).Trim();
++        if (string.IsNullOrWhiteSpace(currentName) && string.IsNullOrWhiteSpace(currentEmail))
++            return Unauthorized();
++
++        // Vínculo seguro com o cadastro em Members da mesma igreja
++        var memberRecord = await db.Members.AsNoTracking()
++            .FirstOrDefaultAsync(m => m.ChurchId == churchId && !string.IsNullOrEmpty(currentEmail) && m.Email.ToLower() == currentEmail, cancellationToken)
++            ?? await db.Members.AsNoTracking()
++            .FirstOrDefaultAsync(m => m.ChurchId == churchId && m.Name.ToUpper() == currentName.ToUpper(), cancellationToken);
++
++        // Conjunto de identificadores válidos para matching de participante na escala
++        var validIdentifiers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
++        if (!string.IsNullOrWhiteSpace(currentName)) validIdentifiers.Add(currentName);
++        if (!string.IsNullOrWhiteSpace(currentEmail)) validIdentifiers.Add(currentEmail);
++        if (memberRecord != null)
++        {
++            if (!string.IsNullOrWhiteSpace(memberRecord.Name)) validIdentifiers.Add(memberRecord.Name);
++            if (!string.IsNullOrWhiteSpace(memberRecord.Email)) validIdentifiers.Add(memberRecord.Email);
++            validIdentifiers.Add(memberRecord.Id.ToString());
++        }
+ 
+         var scales = await db.Scales.AsNoTracking()
+             .Where(x => x.ChurchId == churchId)
+@@ -53,7 +72,8 @@ public sealed class MemberPortalController(AppDbContext db) : ControllerBase
+ 
+         return Ok(scales
+             .Select(x => new { Scale = x, Members = ParseMembers(x.AssignedMembersJson) })
+-            .Where(x => x.Members.Any(name => string.Equals(name, currentName, StringComparison.OrdinalIgnoreCase)))
++            .Where(x => x.Members.Any(assigned => validIdentifiers.Contains(assigned.Trim())
++                || validIdentifiers.Any(id => assigned.Trim().IndexOf(id, StringComparison.OrdinalIgnoreCase) >= 0)))
+             .Select(x => new
+             {
+                 id = x.Scale.Id,
+@@ -66,6 +86,32 @@ public sealed class MemberPortalController(AppDbContext db) : ControllerBase
+             }));
+     }
+ 
++    [HttpGet("profile")]
++    [HttpGet("me")]
++    public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
++    {
++        if (CurrentChurchId is not int churchId) return Unauthorized();
++
++        var currentEmail = (User.FindFirstValue(ClaimTypes.Email) ?? string.Empty).Trim().ToLowerInvariant();
++        var currentName = (User.FindFirstValue(ClaimTypes.Name) ?? string.Empty).Trim();
++        var currentRole = User.FindFirstValue(ClaimTypes.Role) ?? "Membro";
++
++        var member = await db.Members.AsNoTracking()
++            .FirstOrDefaultAsync(m => m.ChurchId == churchId && !string.IsNullOrEmpty(currentEmail) && m.Email.ToLower() == currentEmail, cancellationToken)
++            ?? await db.Members.AsNoTracking()
++            .FirstOrDefaultAsync(m => m.ChurchId == churchId && m.Name.ToUpper() == currentName.ToUpper(), cancellationToken);
++
++        return Ok(new
++        {
++            name = member?.Name ?? currentName,
++            email = member?.Email ?? currentEmail,
++            phone = member?.Phone ?? "",
++            ministry = member?.Ministry ?? "",
++            role = member?.Role ?? currentRole,
++            status = member?.Status ?? "Ativo"
++        });
++    }
++
+     [HttpGet("settings")]
+     public async Task<IActionResult> GetSettings(CancellationToken cancellationToken)
+     {
+diff --git a/backend/ChurchManager.Api/Data/AppDbContext.cs b/backend/ChurchManager.Api/Data/AppDbContext.cs
+index f233457..f7a135b 100644
+--- a/backend/ChurchManager.Api/Data/AppDbContext.cs
++++ b/backend/ChurchManager.Api/Data/AppDbContext.cs
+@@ -18,196 +18,138 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
+     {
+         base.OnModelCreating(modelBuilder);
+ 
+-        // The Render PostgreSQL database was created with the original English EF table names.
+-        // The shared MySQL database used by the team keeps its legacy Portuguese names.
+-        var usePostgresNames = Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true;
++        // --- PostgreSQL é o único provedor da versão final ---
++        // Nomes de tabela e colunas em PascalCase com aspas, coerentes com o schema existente.
+ 
+         modelBuilder.Entity<Church>(entity =>
+         {
+-            entity.ToTable(usePostgresNames ? "Churches" : "Igreja");
++            entity.ToTable("Churches");
+             entity.HasKey(x => x.Id);
+-            if (!usePostgresNames)
+-            {
+-                entity.Property(x => x.Id).HasColumnName("IdIgreja");
+-                entity.Property(x => x.Name).HasColumnName("Nome");
+-                entity.Property(x => x.Phone).HasColumnName("Telefone");
+-                entity.Property(x => x.Address).HasColumnName("Endereco");
+-            }
++            entity.Property(x => x.Id).UseIdentityByDefaultColumn();
+             entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
+             entity.Property(x => x.Email).HasMaxLength(254).IsRequired();
+-            entity.Property(x => x.Phone).HasMaxLength(40).IsRequired();
+-            entity.Property(x => x.Address).HasMaxLength(255).IsRequired();
+-            entity.Property(x => x.CreatedAt);
+-            entity.HasIndex(x => x.Email);
++            entity.Property(x => x.Phone).HasMaxLength(40).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.Address).HasMaxLength(255).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
++            entity.HasIndex(x => x.Email).HasDatabaseName("IX_Churches_Email");
+         });
+ 
+         modelBuilder.Entity<AppUser>(entity =>
+         {
+-            entity.ToTable(usePostgresNames ? "Users" : "Usuario");
++            entity.ToTable("Users");
+             entity.HasKey(x => x.Id);
+-            if (!usePostgresNames)
+-            {
+-                entity.Property(x => x.Id).HasColumnName("IdUsuario");
+-                entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
+-                entity.Property(x => x.CargoId).HasColumnName("IdCargo");
+-                entity.Property(x => x.Name).HasColumnName("Nome");
+-                entity.Property(x => x.PasswordHash).HasColumnName("SenhaHash");
+-                entity.Property(x => x.Role).HasColumnName("Perfil");
+-                entity.Property(x => x.IsActive).HasColumnName("Ativo");
+-            }
++            entity.Property(x => x.Id).UseIdentityByDefaultColumn();
+             entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
+             entity.Property(x => x.Email).HasMaxLength(254).IsRequired();
+-            entity.Property(x => x.PasswordHash).HasMaxLength(255).IsRequired();
+-            entity.Property(x => x.Role).HasMaxLength(80).IsRequired();
+-            entity.Property(x => x.CreatedAt);
+-            entity.HasIndex(x => x.Email).IsUnique();
++            entity.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
++            entity.Property(x => x.Role).HasMaxLength(80).IsRequired().HasDefaultValue("Membro");
++            entity.Property(x => x.IsActive).HasDefaultValue(true);
++            entity.Property(x => x.CargoId).HasDefaultValue(0);
++            entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
++            entity.HasIndex(x => x.Email).IsUnique().HasDatabaseName("IX_Users_Email");
++            entity.HasIndex(x => x.ChurchId).HasDatabaseName("IX_Users_ChurchId");
+             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
+             entity.HasOne<ChurchRole>().WithMany().HasForeignKey(x => x.CargoId).OnDelete(DeleteBehavior.Restrict);
+         });
+ 
+         modelBuilder.Entity<Member>(entity =>
+         {
+-            entity.ToTable(usePostgresNames ? "Members" : "Membro");
++            entity.ToTable("Members");
+             entity.HasKey(x => x.Id);
+-            if (!usePostgresNames)
+-            {
+-                entity.Property(x => x.Id).HasColumnName("IdMembro");
+-                entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
+-                entity.Property(x => x.Name).HasColumnName("Nome");
+-                entity.Property(x => x.Phone).HasColumnName("Telefone");
+-                entity.Property(x => x.Ministry).HasColumnName("Ministerio");
+-                entity.Property(x => x.Role).HasColumnName("Cargo");
+-            }
++            entity.Property(x => x.Id).UseIdentityByDefaultColumn();
+             entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
+-            entity.Property(x => x.Email).HasMaxLength(254).IsRequired();
+-            entity.Property(x => x.Phone).HasMaxLength(40).IsRequired();
+-            entity.Property(x => x.Ministry).HasMaxLength(120).IsRequired();
+-            entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
+-            entity.Property(x => x.Role).HasMaxLength(80).IsRequired();
+-            entity.Property(x => x.CreatedAt);
+-            entity.HasIndex(x => x.ChurchId);
++            entity.Property(x => x.Email).HasMaxLength(254).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.Phone).HasMaxLength(40).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.Ministry).HasMaxLength(120).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.Status).HasMaxLength(40).IsRequired().HasDefaultValue("Ativo");
++            entity.Property(x => x.Role).HasMaxLength(80).IsRequired().HasDefaultValue("Membro");
++            entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
++            entity.HasIndex(x => x.ChurchId).HasDatabaseName("IX_Members_ChurchId");
+             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
+         });
+ 
+         modelBuilder.Entity<Ministry>(entity =>
+         {
+-            entity.ToTable(usePostgresNames ? "Ministries" : "Ministerio");
++            entity.ToTable("Ministries");
+             entity.HasKey(x => x.Id);
+-            if (!usePostgresNames)
+-            {
+-                entity.Property(x => x.Id).HasColumnName("IdMinisterio");
+-                entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
+-                entity.Property(x => x.Name).HasColumnName("Nome");
+-                entity.Property(x => x.Description).HasColumnName("Descricao");
+-                entity.Property(x => x.Coordinator).HasColumnName("Coordenador");
+-            }
++            entity.Property(x => x.Id).UseIdentityByDefaultColumn();
+             entity.Property(x => x.Name).HasMaxLength(160).IsRequired();
+-            entity.Property(x => x.Description).HasMaxLength(500).IsRequired();
+-            entity.Property(x => x.Coordinator).HasMaxLength(160).IsRequired();
+-            entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
+-            entity.Property(x => x.CreatedAt);
+-            entity.HasIndex(x => x.ChurchId);
++            entity.Property(x => x.Description).HasMaxLength(500).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.Coordinator).HasMaxLength(160).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.Status).HasMaxLength(40).IsRequired().HasDefaultValue("Ativo");
++            entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
++            entity.HasIndex(x => x.ChurchId).HasDatabaseName("IX_Ministries_ChurchId");
+             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
+         });
+ 
+         modelBuilder.Entity<ChurchEvent>(entity =>
+         {
+-            entity.ToTable(usePostgresNames ? "Events" : "Evento");
++            entity.ToTable("Events");
+             entity.HasKey(x => x.Id);
+-            if (!usePostgresNames)
+-            {
+-                entity.Property(x => x.Id).HasColumnName("IdEvento");
+-                entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
+-                entity.Property(x => x.Title).HasColumnName("Titulo");
+-                entity.Property(x => x.Description).HasColumnName("Descricao");
+-                entity.Property(x => x.StartsAt).HasColumnName("DataHora");
+-                entity.Property(x => x.Location).HasColumnName("Local");
+-                entity.Property(x => x.Ministry).HasColumnName("Ministerio");
+-                entity.Property(x => x.IsRestricted).HasColumnName("Restrito");
+-                entity.Property(x => x.RecurrenceType).HasColumnName("TipoRepeticao");
+-            }
++            entity.Property(x => x.Id).UseIdentityByDefaultColumn();
+             entity.Property(x => x.Title).HasMaxLength(100).IsRequired();
+-            entity.Property(x => x.Description).IsRequired();
+-            entity.Property(x => x.Location).HasMaxLength(255).IsRequired();
+-            entity.Property(x => x.Ministry).HasMaxLength(120).IsRequired();
+-            entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
+-            entity.Property(x => x.RecurrenceType).HasMaxLength(50).IsRequired();
+-            entity.Property(x => x.CreatedAt);
+-            entity.HasIndex(x => x.ChurchId);
+-            entity.HasIndex(x => new { x.ChurchId, x.StartsAt });
++            entity.Property(x => x.Description).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.StartsAt).HasColumnType("timestamp with time zone");
++            entity.Property(x => x.Location).HasMaxLength(255).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.Ministry).HasMaxLength(120).IsRequired().HasDefaultValue("Todos");
++            entity.Property(x => x.Status).HasMaxLength(40).IsRequired().HasDefaultValue("Planejado");
++            entity.Property(x => x.IsRestricted).HasDefaultValue(false);
++            entity.Property(x => x.RecurrenceType).HasMaxLength(50).IsRequired().HasDefaultValue("Nenhuma");
++            entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
++            entity.HasIndex(x => x.ChurchId).HasDatabaseName("IX_Events_ChurchId");
++            entity.HasIndex(x => new { x.ChurchId, x.StartsAt }).HasDatabaseName("IX_Events_ChurchId_StartsAt");
+             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
+         });
+ 
+         modelBuilder.Entity<FinanceTransaction>(entity =>
+         {
+-            entity.ToTable(usePostgresNames ? "Transactions" : "MovimentacaoFinanceira");
++            entity.ToTable("Transactions");
+             entity.HasKey(x => x.Id);
+-            if (!usePostgresNames)
+-            {
+-                entity.Property(x => x.Id).HasColumnName("IdMovimentacao");
+-                entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
+-                entity.Property(x => x.Description).HasColumnName("Descricao");
+-                entity.Property(x => x.Category).HasColumnName("Categoria");
+-                entity.Property(x => x.Amount).HasColumnName("Valor");
+-                entity.Property(x => x.TransactionType).HasColumnName("Tipo");
+-                entity.Property(x => x.TransactionDate).HasColumnName("DataMovimentacao");
+-                entity.Property(x => x.Method).HasColumnName("Metodo");
+-            }
++            entity.Property(x => x.Id).UseIdentityByDefaultColumn();
+             entity.Property(x => x.Description).HasMaxLength(180).IsRequired();
+-            entity.Property(x => x.Category).HasMaxLength(100).IsRequired();
++            entity.Property(x => x.Category).HasMaxLength(100).IsRequired().HasDefaultValue("Outros");
+             entity.Property(x => x.Amount).HasPrecision(12, 2);
+-            entity.Property(x => x.TransactionType).HasMaxLength(30).IsRequired();
+-            entity.Property(x => x.Method).HasMaxLength(50).IsRequired();
+-            entity.Property(x => x.CreatedAt);
+-            entity.HasIndex(x => x.ChurchId);
+-            entity.HasIndex(x => new { x.ChurchId, x.TransactionDate });
++            entity.Property(x => x.TransactionType).HasMaxLength(30).IsRequired().HasDefaultValue("Income");
++            entity.Property(x => x.TransactionDate).HasColumnType("timestamp with time zone");
++            entity.Property(x => x.Method).HasMaxLength(50).IsRequired().HasDefaultValue("PIX");
++            entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
++            entity.HasIndex(x => x.ChurchId).HasDatabaseName("IX_Transactions_ChurchId");
++            entity.HasIndex(x => new { x.ChurchId, x.TransactionDate }).HasDatabaseName("IX_Transactions_ChurchId_TransactionDate");
+             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
++            // Constraints de valor e tipo no banco
++            entity.ToTable(t => t.HasCheckConstraint("CK_Transactions_Amount", "\"Amount\" > 0"));
++            entity.ToTable(t => t.HasCheckConstraint("CK_Transactions_Type", "\"TransactionType\" IN ('Income','Expense')"));
+         });
+ 
+         modelBuilder.Entity<ChurchRole>(entity =>
+         {
+-            entity.ToTable(usePostgresNames ? "Roles" : "Cargo");
++            entity.ToTable("Roles");
+             entity.HasKey(x => x.Id);
+-            if (!usePostgresNames)
+-            {
+-                entity.Property(x => x.Id).HasColumnName("IdCargo");
+-                entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
+-                entity.Property(x => x.Name).HasColumnName("Nome");
+-                entity.Property(x => x.Description).HasColumnName("Descricao");
+-                entity.Property(x => x.PermissionsJson).HasColumnName("PermissoesJson");
+-                entity.Property(x => x.Users).HasColumnName("QuantidadeUsuarios");
+-            }
++            entity.Property(x => x.Id).UseIdentityByDefaultColumn();
+             entity.Property(x => x.Name).HasMaxLength(50).IsRequired();
+-            entity.Property(x => x.Description).HasMaxLength(500).IsRequired();
+-            entity.Property(x => x.PermissionsJson).HasColumnType("text").IsRequired();
+-            entity.Property(x => x.CreatedAt);
+-            entity.HasIndex(x => x.ChurchId);
++            entity.Property(x => x.Description).HasMaxLength(500).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.PermissionsJson).HasColumnType("text").IsRequired().HasDefaultValue("[]");
++            entity.Property(x => x.Users).HasDefaultValue(0);
++            entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
++            entity.HasIndex(x => x.ChurchId).HasDatabaseName("IX_Roles_ChurchId");
+             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
+         });
+ 
+         modelBuilder.Entity<ChurchScale>(entity =>
+         {
+-            entity.ToTable(usePostgresNames ? "Scales" : "Escala");
++            entity.ToTable("Scales");
+             entity.HasKey(x => x.Id);
+-            if (!usePostgresNames)
+-            {
+-                entity.Property(x => x.Id).HasColumnName("IdEscala");
+-                entity.Property(x => x.ChurchId).HasColumnName("IdIgreja");
+-                entity.Property(x => x.Title).HasColumnName("Titulo");
+-                entity.Property(x => x.Ministry).HasColumnName("Ministerio");
+-                entity.Property(x => x.StartsAt).HasColumnName("DataHora");
+-                entity.Property(x => x.AssignedMembersJson).HasColumnName("MembrosJson");
+-                entity.Property(x => x.EventId).HasColumnName("IdEvento");
+-                entity.Property(x => x.LegacyMinistryName).HasColumnName("NomeMinisterio");
+-            }
++            entity.Property(x => x.Id).UseIdentityByDefaultColumn();
+             entity.Property(x => x.Title).HasMaxLength(180).IsRequired();
+             entity.Property(x => x.Ministry).HasMaxLength(120).IsRequired();
+-            entity.Property(x => x.AssignedMembersJson).HasColumnType("text").IsRequired();
+-            entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
+-            entity.Property(x => x.LegacyMinistryName).HasMaxLength(100).IsRequired();
+-            entity.Property(x => x.CreatedAt);
+-            entity.HasIndex(x => x.ChurchId);
+-            entity.HasIndex(x => new { x.ChurchId, x.StartsAt });
++            entity.Property(x => x.StartsAt).HasColumnType("timestamp with time zone");
++            entity.Property(x => x.AssignedMembersJson).HasColumnType("text").IsRequired().HasDefaultValue("[]");
++            entity.Property(x => x.Status).HasMaxLength(40).IsRequired().HasDefaultValue("Pendente");
++            entity.Property(x => x.EventId);
++            entity.Property(x => x.LegacyMinistryName).HasMaxLength(100).IsRequired().HasDefaultValue("");
++            entity.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
++            entity.HasIndex(x => x.ChurchId).HasDatabaseName("IX_Scales_ChurchId");
++            entity.HasIndex(x => new { x.ChurchId, x.StartsAt }).HasDatabaseName("IX_Scales_ChurchId_StartsAt");
+             entity.HasOne<Church>().WithMany().HasForeignKey(x => x.ChurchId).OnDelete(DeleteBehavior.Cascade);
+             entity.HasOne<ChurchEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.SetNull);
+         });
+diff --git a/backend/ChurchManager.Api/Migrations/20261123232145_InitialPostgresSchema.Designer.cs b/backend/ChurchManager.Api/Migrations/20261123232145_InitialPostgresSchema.Designer.cs
+new file mode 100644
+index 0000000..c238bed
+--- /dev/null
++++ b/backend/ChurchManager.Api/Migrations/20261123232145_InitialPostgresSchema.Designer.cs
+@@ -0,0 +1,576 @@
++﻿// <auto-generated />
++using System;
++using ChurchManager.Api.Data;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Migrations;
++using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
++using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
++
++#nullable disable
++
++namespace ChurchManager.Api.Migrations
++{
++    [DbContext(typeof(AppDbContext))]
++    [Migration("20261123232145_InitialPostgresSchema")]
++    partial class InitialPostgresSchema
++    {
++        /// <inheritdoc />
++        protected override void BuildTargetModel(ModelBuilder modelBuilder)
++        {
++#pragma warning disable 612, 618
++            modelBuilder
++                .HasAnnotation("ProductVersion", "8.0.32")
++                .HasAnnotation("Relational:MaxIdentifierLength", 63);
++
++            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
++
++            modelBuilder.Entity("ChurchManager.Api.Models.AppUser", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("CargoId")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer")
++                        .HasDefaultValue(0);
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Email")
++                        .IsRequired()
++                        .HasMaxLength(254)
++                        .HasColumnType("character varying(254)");
++
++                    b.Property<bool>("IsActive")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("boolean")
++                        .HasDefaultValue(true);
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)");
++
++                    b.Property<string>("PasswordHash")
++                        .IsRequired()
++                        .HasMaxLength(512)
++                        .HasColumnType("character varying(512)");
++
++                    b.Property<string>("Role")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)")
++                        .HasDefaultValue("Membro");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("CargoId");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Users_ChurchId");
++
++                    b.HasIndex("Email")
++                        .IsUnique()
++                        .HasDatabaseName("IX_Users_Email");
++
++                    b.ToTable("Users", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Church", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<string>("Address")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(255)
++                        .HasColumnType("character varying(255)")
++                        .HasDefaultValue("");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Email")
++                        .IsRequired()
++                        .HasMaxLength(254)
++                        .HasColumnType("character varying(254)");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)");
++
++                    b.Property<string>("Phone")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("Email")
++                        .HasDatabaseName("IX_Churches_Email");
++
++                    b.ToTable("Churches", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchEvent", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Description")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("text")
++                        .HasDefaultValue("");
++
++                    b.Property<bool>("IsRestricted")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("boolean")
++                        .HasDefaultValue(false);
++
++                    b.Property<string>("Location")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(255)
++                        .HasColumnType("character varying(255)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Ministry")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(120)
++                        .HasColumnType("character varying(120)")
++                        .HasDefaultValue("Todos");
++
++                    b.Property<string>("RecurrenceType")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(50)
++                        .HasColumnType("character varying(50)")
++                        .HasDefaultValue("Nenhuma");
++
++                    b.Property<DateTime>("StartsAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("Planejado");
++
++                    b.Property<string>("Title")
++                        .IsRequired()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Events_ChurchId");
++
++                    b.HasIndex("ChurchId", "StartsAt")
++                        .HasDatabaseName("IX_Events_ChurchId_StartsAt");
++
++                    b.ToTable("Events", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchRole", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Description")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(500)
++                        .HasColumnType("character varying(500)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(50)
++                        .HasColumnType("character varying(50)");
++
++                    b.Property<string>("PermissionsJson")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("text")
++                        .HasDefaultValue("[]");
++
++                    b.Property<int>("Users")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer")
++                        .HasDefaultValue(0);
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Roles_ChurchId");
++
++                    b.ToTable("Roles", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchScale", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<string>("AssignedMembersJson")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("text")
++                        .HasDefaultValue("[]");
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<int?>("EventId")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("LegacyMinistryName")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Ministry")
++                        .IsRequired()
++                        .HasMaxLength(120)
++                        .HasColumnType("character varying(120)");
++
++                    b.Property<DateTime>("StartsAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("Pendente");
++
++                    b.Property<string>("Title")
++                        .IsRequired()
++                        .HasMaxLength(180)
++                        .HasColumnType("character varying(180)");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Scales_ChurchId");
++
++                    b.HasIndex("EventId");
++
++                    b.HasIndex("ChurchId", "StartsAt")
++                        .HasDatabaseName("IX_Scales_ChurchId_StartsAt");
++
++                    b.ToTable("Scales", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.FinanceTransaction", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<decimal>("Amount")
++                        .HasPrecision(12, 2)
++                        .HasColumnType("numeric(12,2)");
++
++                    b.Property<string>("Category")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)")
++                        .HasDefaultValue("Outros");
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Description")
++                        .IsRequired()
++                        .HasMaxLength(180)
++                        .HasColumnType("character varying(180)");
++
++                    b.Property<string>("Method")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(50)
++                        .HasColumnType("character varying(50)")
++                        .HasDefaultValue("PIX");
++
++                    b.Property<DateTime>("TransactionDate")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("TransactionType")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(30)
++                        .HasColumnType("character varying(30)")
++                        .HasDefaultValue("Income");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Transactions_ChurchId");
++
++                    b.HasIndex("ChurchId", "TransactionDate")
++                        .HasDatabaseName("IX_Transactions_ChurchId_TransactionDate");
++
++                    b.ToTable("Transactions", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_Transactions_Amount", "\"Amount\" > 0");
++
++                            t.HasCheckConstraint("CK_Transactions_Type", "\"TransactionType\" IN ('Income','Expense')");
++                        });
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Member", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Email")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(254)
++                        .HasColumnType("character varying(254)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Ministry")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(120)
++                        .HasColumnType("character varying(120)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(160)
++                        .HasColumnType("character varying(160)");
++
++                    b.Property<string>("Phone")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Role")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)")
++                        .HasDefaultValue("Membro");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("Ativo");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Members_ChurchId");
++
++                    b.ToTable("Members", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Ministry", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("Coordinator")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(160)
++                        .HasColumnType("character varying(160)")
++                        .HasDefaultValue("");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Description")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(500)
++                        .HasColumnType("character varying(500)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(160)
++                        .HasColumnType("character varying(160)");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("Ativo");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Ministries_ChurchId");
++
++                    b.ToTable("Ministries", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.AppUser", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.ChurchRole", null)
++                        .WithMany()
++                        .HasForeignKey("CargoId")
++                        .OnDelete(DeleteBehavior.Restrict)
++                        .IsRequired();
++
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchEvent", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchRole", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchScale", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++
++                    b.HasOne("ChurchManager.Api.Models.ChurchEvent", null)
++                        .WithMany()
++                        .HasForeignKey("EventId")
++                        .OnDelete(DeleteBehavior.SetNull);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.FinanceTransaction", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Member", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Ministry", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++#pragma warning restore 612, 618
++        }
++    }
++}
+diff --git a/backend/ChurchManager.Api/Migrations/20261123232145_InitialPostgresSchema.cs b/backend/ChurchManager.Api/Migrations/20261123232145_InitialPostgresSchema.cs
+new file mode 100644
+index 0000000..6be4092
+--- /dev/null
++++ b/backend/ChurchManager.Api/Migrations/20261123232145_InitialPostgresSchema.cs
+@@ -0,0 +1,327 @@
++﻿using System;
++using Microsoft.EntityFrameworkCore.Migrations;
++using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
++
++#nullable disable
++
++namespace ChurchManager.Api.Migrations
++{
++    /// <inheritdoc />
++    public partial class InitialPostgresSchema : Migration
++    {
++        /// <inheritdoc />
++        protected override void Up(MigrationBuilder migrationBuilder)
++        {
++            migrationBuilder.CreateTable(
++                name: "Churches",
++                columns: table => new
++                {
++                    Id = table.Column<int>(type: "integer", nullable: false)
++                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
++                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
++                    Email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
++                    Phone = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false, defaultValue: ""),
++                    Address = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false, defaultValue: ""),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_Churches", x => x.Id);
++                });
++
++            migrationBuilder.CreateTable(
++                name: "Events",
++                columns: table => new
++                {
++                    Id = table.Column<int>(type: "integer", nullable: false)
++                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
++                    Title = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
++                    Description = table.Column<string>(type: "text", nullable: false, defaultValue: ""),
++                    StartsAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
++                    Location = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false, defaultValue: ""),
++                    Ministry = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false, defaultValue: "Todos"),
++                    Status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false, defaultValue: "Planejado"),
++                    IsRestricted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
++                    RecurrenceType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "Nenhuma"),
++                    ChurchId = table.Column<int>(type: "integer", nullable: false),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_Events", x => x.Id);
++                    table.ForeignKey(
++                        name: "FK_Events_Churches_ChurchId",
++                        column: x => x.ChurchId,
++                        principalTable: "Churches",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.Cascade);
++                });
++
++            migrationBuilder.CreateTable(
++                name: "Members",
++                columns: table => new
++                {
++                    Id = table.Column<int>(type: "integer", nullable: false)
++                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
++                    Name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
++                    Email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false, defaultValue: ""),
++                    Phone = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false, defaultValue: ""),
++                    Ministry = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false, defaultValue: ""),
++                    Status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false, defaultValue: "Ativo"),
++                    Role = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false, defaultValue: "Membro"),
++                    ChurchId = table.Column<int>(type: "integer", nullable: false),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_Members", x => x.Id);
++                    table.ForeignKey(
++                        name: "FK_Members_Churches_ChurchId",
++                        column: x => x.ChurchId,
++                        principalTable: "Churches",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.Cascade);
++                });
++
++            migrationBuilder.CreateTable(
++                name: "Ministries",
++                columns: table => new
++                {
++                    Id = table.Column<int>(type: "integer", nullable: false)
++                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
++                    Name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
++                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false, defaultValue: ""),
++                    Coordinator = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false, defaultValue: ""),
++                    Status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false, defaultValue: "Ativo"),
++                    ChurchId = table.Column<int>(type: "integer", nullable: false),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_Ministries", x => x.Id);
++                    table.ForeignKey(
++                        name: "FK_Ministries_Churches_ChurchId",
++                        column: x => x.ChurchId,
++                        principalTable: "Churches",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.Cascade);
++                });
++
++            migrationBuilder.CreateTable(
++                name: "Roles",
++                columns: table => new
++                {
++                    Id = table.Column<int>(type: "integer", nullable: false)
++                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
++                    Name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
++                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false, defaultValue: ""),
++                    PermissionsJson = table.Column<string>(type: "text", nullable: false, defaultValue: "[]"),
++                    Users = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
++                    ChurchId = table.Column<int>(type: "integer", nullable: false),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_Roles", x => x.Id);
++                    table.ForeignKey(
++                        name: "FK_Roles_Churches_ChurchId",
++                        column: x => x.ChurchId,
++                        principalTable: "Churches",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.Cascade);
++                });
++
++            migrationBuilder.CreateTable(
++                name: "Transactions",
++                columns: table => new
++                {
++                    Id = table.Column<int>(type: "integer", nullable: false)
++                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
++                    Description = table.Column<string>(type: "character varying(180)", maxLength: 180, nullable: false),
++                    Category = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false, defaultValue: "Outros"),
++                    Amount = table.Column<decimal>(type: "numeric(12,2)", precision: 12, scale: 2, nullable: false),
++                    TransactionType = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false, defaultValue: "Income"),
++                    TransactionDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
++                    Method = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false, defaultValue: "PIX"),
++                    ChurchId = table.Column<int>(type: "integer", nullable: false),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_Transactions", x => x.Id);
++                    table.CheckConstraint("CK_Transactions_Amount", "\"Amount\" > 0");
++                    table.CheckConstraint("CK_Transactions_Type", "\"TransactionType\" IN ('Income','Expense')");
++                    table.ForeignKey(
++                        name: "FK_Transactions_Churches_ChurchId",
++                        column: x => x.ChurchId,
++                        principalTable: "Churches",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.Cascade);
++                });
++
++            migrationBuilder.CreateTable(
++                name: "Scales",
++                columns: table => new
++                {
++                    Id = table.Column<int>(type: "integer", nullable: false)
++                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
++                    Title = table.Column<string>(type: "character varying(180)", maxLength: 180, nullable: false),
++                    Ministry = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
++                    StartsAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
++                    AssignedMembersJson = table.Column<string>(type: "text", nullable: false, defaultValue: "[]"),
++                    Status = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false, defaultValue: "Pendente"),
++                    EventId = table.Column<int>(type: "integer", nullable: true),
++                    LegacyMinistryName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false, defaultValue: ""),
++                    ChurchId = table.Column<int>(type: "integer", nullable: false),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_Scales", x => x.Id);
++                    table.ForeignKey(
++                        name: "FK_Scales_Churches_ChurchId",
++                        column: x => x.ChurchId,
++                        principalTable: "Churches",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.Cascade);
++                    table.ForeignKey(
++                        name: "FK_Scales_Events_EventId",
++                        column: x => x.EventId,
++                        principalTable: "Events",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.SetNull);
++                });
++
++            migrationBuilder.CreateTable(
++                name: "Users",
++                columns: table => new
++                {
++                    Id = table.Column<int>(type: "integer", nullable: false)
++                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
++                    ChurchId = table.Column<int>(type: "integer", nullable: false),
++                    CargoId = table.Column<int>(type: "integer", nullable: false, defaultValue: 0),
++                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
++                    Email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
++                    PasswordHash = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
++                    Role = table.Column<string>(type: "character varying(80)", maxLength: 80, nullable: false, defaultValue: "Membro"),
++                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
++                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
++                },
++                constraints: table =>
++                {
++                    table.PrimaryKey("PK_Users", x => x.Id);
++                    table.ForeignKey(
++                        name: "FK_Users_Churches_ChurchId",
++                        column: x => x.ChurchId,
++                        principalTable: "Churches",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.Cascade);
++                    table.ForeignKey(
++                        name: "FK_Users_Roles_CargoId",
++                        column: x => x.CargoId,
++                        principalTable: "Roles",
++                        principalColumn: "Id",
++                        onDelete: ReferentialAction.Restrict);
++                });
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Churches_Email",
++                table: "Churches",
++                column: "Email");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Events_ChurchId",
++                table: "Events",
++                column: "ChurchId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Events_ChurchId_StartsAt",
++                table: "Events",
++                columns: new[] { "ChurchId", "StartsAt" });
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Members_ChurchId",
++                table: "Members",
++                column: "ChurchId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Ministries_ChurchId",
++                table: "Ministries",
++                column: "ChurchId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Roles_ChurchId",
++                table: "Roles",
++                column: "ChurchId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Scales_ChurchId",
++                table: "Scales",
++                column: "ChurchId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Scales_ChurchId_StartsAt",
++                table: "Scales",
++                columns: new[] { "ChurchId", "StartsAt" });
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Scales_EventId",
++                table: "Scales",
++                column: "EventId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Transactions_ChurchId",
++                table: "Transactions",
++                column: "ChurchId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Transactions_ChurchId_TransactionDate",
++                table: "Transactions",
++                columns: new[] { "ChurchId", "TransactionDate" });
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Users_CargoId",
++                table: "Users",
++                column: "CargoId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Users_ChurchId",
++                table: "Users",
++                column: "ChurchId");
++
++            migrationBuilder.CreateIndex(
++                name: "IX_Users_Email",
++                table: "Users",
++                column: "Email",
++                unique: true);
++        }
++
++        /// <inheritdoc />
++        protected override void Down(MigrationBuilder migrationBuilder)
++        {
++            migrationBuilder.DropTable(
++                name: "Members");
++
++            migrationBuilder.DropTable(
++                name: "Ministries");
++
++            migrationBuilder.DropTable(
++                name: "Scales");
++
++            migrationBuilder.DropTable(
++                name: "Transactions");
++
++            migrationBuilder.DropTable(
++                name: "Users");
++
++            migrationBuilder.DropTable(
++                name: "Events");
++
++            migrationBuilder.DropTable(
++                name: "Roles");
++
++            migrationBuilder.DropTable(
++                name: "Churches");
++        }
++    }
++}
+diff --git a/backend/ChurchManager.Api/Migrations/AppDbContextModelSnapshot.cs b/backend/ChurchManager.Api/Migrations/AppDbContextModelSnapshot.cs
+new file mode 100644
+index 0000000..aa634bf
+--- /dev/null
++++ b/backend/ChurchManager.Api/Migrations/AppDbContextModelSnapshot.cs
+@@ -0,0 +1,573 @@
++﻿// <auto-generated />
++using System;
++using ChurchManager.Api.Data;
++using Microsoft.EntityFrameworkCore;
++using Microsoft.EntityFrameworkCore.Infrastructure;
++using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
++using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
++
++#nullable disable
++
++namespace ChurchManager.Api.Migrations
++{
++    [DbContext(typeof(AppDbContext))]
++    partial class AppDbContextModelSnapshot : ModelSnapshot
++    {
++        protected override void BuildModel(ModelBuilder modelBuilder)
++        {
++#pragma warning disable 612, 618
++            modelBuilder
++                .HasAnnotation("ProductVersion", "8.0.32")
++                .HasAnnotation("Relational:MaxIdentifierLength", 63);
++
++            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
++
++            modelBuilder.Entity("ChurchManager.Api.Models.AppUser", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("CargoId")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer")
++                        .HasDefaultValue(0);
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Email")
++                        .IsRequired()
++                        .HasMaxLength(254)
++                        .HasColumnType("character varying(254)");
++
++                    b.Property<bool>("IsActive")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("boolean")
++                        .HasDefaultValue(true);
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)");
++
++                    b.Property<string>("PasswordHash")
++                        .IsRequired()
++                        .HasMaxLength(512)
++                        .HasColumnType("character varying(512)");
++
++                    b.Property<string>("Role")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)")
++                        .HasDefaultValue("Membro");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("CargoId");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Users_ChurchId");
++
++                    b.HasIndex("Email")
++                        .IsUnique()
++                        .HasDatabaseName("IX_Users_Email");
++
++                    b.ToTable("Users", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Church", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<string>("Address")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(255)
++                        .HasColumnType("character varying(255)")
++                        .HasDefaultValue("");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Email")
++                        .IsRequired()
++                        .HasMaxLength(254)
++                        .HasColumnType("character varying(254)");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)");
++
++                    b.Property<string>("Phone")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("Email")
++                        .HasDatabaseName("IX_Churches_Email");
++
++                    b.ToTable("Churches", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchEvent", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Description")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("text")
++                        .HasDefaultValue("");
++
++                    b.Property<bool>("IsRestricted")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("boolean")
++                        .HasDefaultValue(false);
++
++                    b.Property<string>("Location")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(255)
++                        .HasColumnType("character varying(255)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Ministry")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(120)
++                        .HasColumnType("character varying(120)")
++                        .HasDefaultValue("Todos");
++
++                    b.Property<string>("RecurrenceType")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(50)
++                        .HasColumnType("character varying(50)")
++                        .HasDefaultValue("Nenhuma");
++
++                    b.Property<DateTime>("StartsAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("Planejado");
++
++                    b.Property<string>("Title")
++                        .IsRequired()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Events_ChurchId");
++
++                    b.HasIndex("ChurchId", "StartsAt")
++                        .HasDatabaseName("IX_Events_ChurchId_StartsAt");
++
++                    b.ToTable("Events", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchRole", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Description")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(500)
++                        .HasColumnType("character varying(500)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(50)
++                        .HasColumnType("character varying(50)");
++
++                    b.Property<string>("PermissionsJson")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("text")
++                        .HasDefaultValue("[]");
++
++                    b.Property<int>("Users")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer")
++                        .HasDefaultValue(0);
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Roles_ChurchId");
++
++                    b.ToTable("Roles", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchScale", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<string>("AssignedMembersJson")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("text")
++                        .HasDefaultValue("[]");
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<int?>("EventId")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("LegacyMinistryName")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Ministry")
++                        .IsRequired()
++                        .HasMaxLength(120)
++                        .HasColumnType("character varying(120)");
++
++                    b.Property<DateTime>("StartsAt")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("Pendente");
++
++                    b.Property<string>("Title")
++                        .IsRequired()
++                        .HasMaxLength(180)
++                        .HasColumnType("character varying(180)");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Scales_ChurchId");
++
++                    b.HasIndex("EventId");
++
++                    b.HasIndex("ChurchId", "StartsAt")
++                        .HasDatabaseName("IX_Scales_ChurchId_StartsAt");
++
++                    b.ToTable("Scales", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.FinanceTransaction", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<decimal>("Amount")
++                        .HasPrecision(12, 2)
++                        .HasColumnType("numeric(12,2)");
++
++                    b.Property<string>("Category")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(100)
++                        .HasColumnType("character varying(100)")
++                        .HasDefaultValue("Outros");
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Description")
++                        .IsRequired()
++                        .HasMaxLength(180)
++                        .HasColumnType("character varying(180)");
++
++                    b.Property<string>("Method")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(50)
++                        .HasColumnType("character varying(50)")
++                        .HasDefaultValue("PIX");
++
++                    b.Property<DateTime>("TransactionDate")
++                        .HasColumnType("timestamp with time zone");
++
++                    b.Property<string>("TransactionType")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(30)
++                        .HasColumnType("character varying(30)")
++                        .HasDefaultValue("Income");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Transactions_ChurchId");
++
++                    b.HasIndex("ChurchId", "TransactionDate")
++                        .HasDatabaseName("IX_Transactions_ChurchId_TransactionDate");
++
++                    b.ToTable("Transactions", null, t =>
++                        {
++                            t.HasCheckConstraint("CK_Transactions_Amount", "\"Amount\" > 0");
++
++                            t.HasCheckConstraint("CK_Transactions_Type", "\"TransactionType\" IN ('Income','Expense')");
++                        });
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Member", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Email")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(254)
++                        .HasColumnType("character varying(254)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Ministry")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(120)
++                        .HasColumnType("character varying(120)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(160)
++                        .HasColumnType("character varying(160)");
++
++                    b.Property<string>("Phone")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Role")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(80)
++                        .HasColumnType("character varying(80)")
++                        .HasDefaultValue("Membro");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("Ativo");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Members_ChurchId");
++
++                    b.ToTable("Members", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Ministry", b =>
++                {
++                    b.Property<int>("Id")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("integer");
++
++                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
++
++                    b.Property<int>("ChurchId")
++                        .HasColumnType("integer");
++
++                    b.Property<string>("Coordinator")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(160)
++                        .HasColumnType("character varying(160)")
++                        .HasDefaultValue("");
++
++                    b.Property<DateTime>("CreatedAt")
++                        .ValueGeneratedOnAdd()
++                        .HasColumnType("timestamp with time zone")
++                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
++
++                    b.Property<string>("Description")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(500)
++                        .HasColumnType("character varying(500)")
++                        .HasDefaultValue("");
++
++                    b.Property<string>("Name")
++                        .IsRequired()
++                        .HasMaxLength(160)
++                        .HasColumnType("character varying(160)");
++
++                    b.Property<string>("Status")
++                        .IsRequired()
++                        .ValueGeneratedOnAdd()
++                        .HasMaxLength(40)
++                        .HasColumnType("character varying(40)")
++                        .HasDefaultValue("Ativo");
++
++                    b.HasKey("Id");
++
++                    b.HasIndex("ChurchId")
++                        .HasDatabaseName("IX_Ministries_ChurchId");
++
++                    b.ToTable("Ministries", (string)null);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.AppUser", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.ChurchRole", null)
++                        .WithMany()
++                        .HasForeignKey("CargoId")
++                        .OnDelete(DeleteBehavior.Restrict)
++                        .IsRequired();
++
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchEvent", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchRole", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.ChurchScale", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++
++                    b.HasOne("ChurchManager.Api.Models.ChurchEvent", null)
++                        .WithMany()
++                        .HasForeignKey("EventId")
++                        .OnDelete(DeleteBehavior.SetNull);
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.FinanceTransaction", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Member", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++
++            modelBuilder.Entity("ChurchManager.Api.Models.Ministry", b =>
++                {
++                    b.HasOne("ChurchManager.Api.Models.Church", null)
++                        .WithMany()
++                        .HasForeignKey("ChurchId")
++                        .OnDelete(DeleteBehavior.Cascade)
++                        .IsRequired();
++                });
++#pragma warning restore 612, 618
++        }
++    }
++}
+diff --git a/backend/ChurchManager.Api/Program.cs b/backend/ChurchManager.Api/Program.cs
+index 9049e32..d7f01d0 100644
+--- a/backend/ChurchManager.Api/Program.cs
++++ b/backend/ChurchManager.Api/Program.cs
+@@ -14,21 +14,19 @@ var builder = WebApplication.CreateBuilder(args);
+ // O sistema não recebe arquivos; limite global de JSON evita cargas excessivas.
+ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 1_048_576);
+ 
+-var databaseProvider = (
+-    Environment.GetEnvironmentVariable("CHURCHMANAGER_DB_PROVIDER")
+-    ?? builder.Configuration["Database:Provider"]
+-    ?? "mysql").Trim();
+-
+-var connectionString = Environment.GetEnvironmentVariable("CHURCHMANAGER_DB")
++// --- PostgreSQL é o único provedor da versão final ---
++var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
++    ?? Environment.GetEnvironmentVariable("CHURCHMANAGER_DB")
+     ?? builder.Configuration.GetConnectionString("DefaultConnection")
+-    ?? "Server=localhost;Port=3307;Database=churchmanager;User=churchmanager;Password=churchmanager_local_dev;";
++    ?? string.Empty;
+ 
+-var usesPostgres = databaseProvider.Equals("postgres", StringComparison.OrdinalIgnoreCase)
+-    || databaseProvider.Equals("postgresql", StringComparison.OrdinalIgnoreCase);
+-var usesMySql = databaseProvider.Equals("mysql", StringComparison.OrdinalIgnoreCase);
++if (!builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(connectionString))
++    throw new InvalidOperationException(
++        "Configure ConnectionStrings__DefaultConnection ou CHURCHMANAGER_DB com a conexão PostgreSQL do Supabase.");
+ 
+-if (!usesPostgres && !usesMySql)
+-    throw new InvalidOperationException("CHURCHMANAGER_DB_PROVIDER deve ser 'mysql' ou 'postgres'.");
++// Fallback para desenvolvimento local: Postgres local.
++if (string.IsNullOrWhiteSpace(connectionString))
++    connectionString = "Host=localhost;Port=5432;Database=churchmanager;Username=postgres;Password=postgres";
+ 
+ var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"] ?? "";
+ var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["Jwt:Issuer"] ?? "ChurchManager.Api";
+@@ -40,10 +38,6 @@ if (jwtKey.Length < 32 || (!builder.Environment.IsDevelopment() && jwtKey.Starts
+ 
+ if (!builder.Environment.IsDevelopment())
+ {
+-    if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection"))
+-        && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CHURCHMANAGER_DB")))
+-        throw new InvalidOperationException("Configure ConnectionStrings__DefaultConnection ou CHURCHMANAGER_DB com a conexão do banco remoto.");
+-
+     if (!Uri.TryCreate(configuredFrontend, UriKind.Absolute, out var frontendUri)
+         || frontendUri.Scheme != Uri.UriSchemeHttps)
+         throw new InvalidOperationException("Configure FRONTEND_ORIGIN com a origem HTTPS exata do front-end publicado.");
+@@ -51,18 +45,11 @@ if (!builder.Environment.IsDevelopment())
+ 
+ builder.Services.AddDbContext<AppDbContext>(options =>
+ {
+-    if (usesPostgres)
+-    {
+-        var postgresConnectionString = PreparePostgresConnectionString(
+-            connectionString,
+-            requireSsl: !builder.Environment.IsDevelopment());
++    var postgresConnectionString = PreparePostgresConnectionString(
++        connectionString,
++        requireSsl: !builder.Environment.IsDevelopment());
+ 
+-        options.UseNpgsql(postgresConnectionString);
+-    }
+-    else
+-    {
+-        options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 36)));
+-    }
++    options.UseNpgsql(postgresConnectionString);
+ });
+ 
+ builder.Services.AddScoped<IPasswordHasher<AppUser>, PasswordHasher<AppUser>>();
+@@ -175,25 +162,20 @@ app.MapGet("/health/ready", async (AppDbContext db, CancellationToken cancellati
+ });
+ app.MapControllers();
+ 
+-// EnsureCreated is intended only for a new/empty database bootstrap.
+-// Use a reviewed EF migration for future schema changes; EnsureCreated does not update existing tables.
+-if (app.Configuration.GetValue<bool>("Database:AutoCreate"))
++// Aplica migrações EF Core pendentes ao iniciar, apenas se Database:AutoMigrate estiver ativo.
++// Em produção, desativar e aplicar manualmente antes do deploy.
++if (app.Configuration.GetValue<bool>("Database:AutoMigrate"))
+ {
+     using var scope = app.Services.CreateScope();
+     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+-    await db.Database.EnsureCreatedAsync();
+-
+-    // EnsureCreated skips schema creation when a database already contains any tables.
+-    // The PostgreSQL service may contain the original schema, so add missing fields/tables
+-    // without dropping or renaming existing data.
+-    if (usesPostgres)
+-        await PostgresSchemaBootstrap.EnsureAsync(db);
++    await db.Database.MigrateAsync();
+ }
++
+ app.Run();
+ 
+ static string PreparePostgresConnectionString(string value, bool requireSsl)
+ {
+-    // Render supplies a PostgreSQL URL; Npgsql expects a keyword/value connection string.
++    // Render e Supabase podem fornecer uma URL PostgreSQL; Npgsql espera keyword/value.
+     if (Uri.TryCreate(value, UriKind.Absolute, out var uri)
+         && (uri.Scheme.Equals("postgres", StringComparison.OrdinalIgnoreCase)
+             || uri.Scheme.Equals("postgresql", StringComparison.OrdinalIgnoreCase)))
+diff --git a/backend/ChurchManager.Api/appsettings.json b/backend/ChurchManager.Api/appsettings.json
+index a1f75a7..25f3c43 100644
+--- a/backend/ChurchManager.Api/appsettings.json
++++ b/backend/ChurchManager.Api/appsettings.json
+@@ -1,6 +1,6 @@
+ {
+   "ConnectionStrings": {
+-    "DefaultConnection": "Server=localhost;Port=3306;Database=GestaoIgrejaTCC;User=root;Password=;"
++    "DefaultConnection": "Host=localhost;Port=5432;Database=churchmanager;Username=postgres;Password=postgres"
+   },
+   "Jwt": {
+     "Key": "local-dev-only-change-this-key-before-deploying-2026",
+@@ -8,8 +8,7 @@
+     "Audience": "ChurchManager.Web"
+   },
+   "Database": {
+-    "Provider": "mysql",
+-    "AutoCreate": false
++    "AutoMigrate": false
+   },
+   "Auth": {
+     "AllowPublicRegistration": true
+diff --git a/backend/database/migrations/InitialPostgresSchema.sql b/backend/database/migrations/InitialPostgresSchema.sql
+new file mode 100644
+index 0000000..c671262
+--- /dev/null
++++ b/backend/database/migrations/InitialPostgresSchema.sql
+@@ -0,0 +1,267 @@
++﻿CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
++    "MigrationId" character varying(150) NOT NULL,
++    "ProductVersion" character varying(32) NOT NULL,
++    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
++);
++
++START TRANSACTION;
++
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE TABLE "Churches" (
++        "Id" integer GENERATED BY DEFAULT AS IDENTITY,
++        "Name" character varying(100) NOT NULL,
++        "Email" character varying(254) NOT NULL,
++        "Phone" character varying(40) NOT NULL DEFAULT '',
++        "Address" character varying(255) NOT NULL DEFAULT '',
++        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
++        CONSTRAINT "PK_Churches" PRIMARY KEY ("Id")
++    );
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE TABLE "Events" (
++        "Id" integer GENERATED BY DEFAULT AS IDENTITY,
++        "Title" character varying(100) NOT NULL,
++        "Description" text NOT NULL DEFAULT '',
++        "StartsAt" timestamp with time zone NOT NULL,
++        "Location" character varying(255) NOT NULL DEFAULT '',
++        "Ministry" character varying(120) NOT NULL DEFAULT 'Todos',
++        "Status" character varying(40) NOT NULL DEFAULT 'Planejado',
++        "IsRestricted" boolean NOT NULL DEFAULT FALSE,
++        "RecurrenceType" character varying(50) NOT NULL DEFAULT 'Nenhuma',
++        "ChurchId" integer NOT NULL,
++        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
++        CONSTRAINT "PK_Events" PRIMARY KEY ("Id"),
++        CONSTRAINT "FK_Events_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
++    );
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE TABLE "Members" (
++        "Id" integer GENERATED BY DEFAULT AS IDENTITY,
++        "Name" character varying(160) NOT NULL,
++        "Email" character varying(254) NOT NULL DEFAULT '',
++        "Phone" character varying(40) NOT NULL DEFAULT '',
++        "Ministry" character varying(120) NOT NULL DEFAULT '',
++        "Status" character varying(40) NOT NULL DEFAULT 'Ativo',
++        "Role" character varying(80) NOT NULL DEFAULT 'Membro',
++        "ChurchId" integer NOT NULL,
++        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
++        CONSTRAINT "PK_Members" PRIMARY KEY ("Id"),
++        CONSTRAINT "FK_Members_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
++    );
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE TABLE "Ministries" (
++        "Id" integer GENERATED BY DEFAULT AS IDENTITY,
++        "Name" character varying(160) NOT NULL,
++        "Description" character varying(500) NOT NULL DEFAULT '',
++        "Coordinator" character varying(160) NOT NULL DEFAULT '',
++        "Status" character varying(40) NOT NULL DEFAULT 'Ativo',
++        "ChurchId" integer NOT NULL,
++        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
++        CONSTRAINT "PK_Ministries" PRIMARY KEY ("Id"),
++        CONSTRAINT "FK_Ministries_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
++    );
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE TABLE "Roles" (
++        "Id" integer GENERATED BY DEFAULT AS IDENTITY,
++        "Name" character varying(50) NOT NULL,
++        "Description" character varying(500) NOT NULL DEFAULT '',
++        "PermissionsJson" text NOT NULL DEFAULT '[]',
++        "Users" integer NOT NULL DEFAULT 0,
++        "ChurchId" integer NOT NULL,
++        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
++        CONSTRAINT "PK_Roles" PRIMARY KEY ("Id"),
++        CONSTRAINT "FK_Roles_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
++    );
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE TABLE "Transactions" (
++        "Id" integer GENERATED BY DEFAULT AS IDENTITY,
++        "Description" character varying(180) NOT NULL,
++        "Category" character varying(100) NOT NULL DEFAULT 'Outros',
++        "Amount" numeric(12,2) NOT NULL,
++        "TransactionType" character varying(30) NOT NULL DEFAULT 'Income',
++        "TransactionDate" timestamp with time zone NOT NULL,
++        "Method" character varying(50) NOT NULL DEFAULT 'PIX',
++        "ChurchId" integer NOT NULL,
++        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
++        CONSTRAINT "PK_Transactions" PRIMARY KEY ("Id"),
++        CONSTRAINT "CK_Transactions_Amount" CHECK ("Amount" > 0),
++        CONSTRAINT "CK_Transactions_Type" CHECK ("TransactionType" IN ('Income','Expense')),
++        CONSTRAINT "FK_Transactions_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
++    );
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE TABLE "Scales" (
++        "Id" integer GENERATED BY DEFAULT AS IDENTITY,
++        "Title" character varying(180) NOT NULL,
++        "Ministry" character varying(120) NOT NULL,
++        "StartsAt" timestamp with time zone NOT NULL,
++        "AssignedMembersJson" text NOT NULL DEFAULT '[]',
++        "Status" character varying(40) NOT NULL DEFAULT 'Pendente',
++        "EventId" integer,
++        "LegacyMinistryName" character varying(100) NOT NULL DEFAULT '',
++        "ChurchId" integer NOT NULL,
++        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
++        CONSTRAINT "PK_Scales" PRIMARY KEY ("Id"),
++        CONSTRAINT "FK_Scales_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE,
++        CONSTRAINT "FK_Scales_Events_EventId" FOREIGN KEY ("EventId") REFERENCES "Events" ("Id") ON DELETE SET NULL
++    );
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE TABLE "Users" (
++        "Id" integer GENERATED BY DEFAULT AS IDENTITY,
++        "ChurchId" integer NOT NULL,
++        "CargoId" integer NOT NULL DEFAULT 0,
++        "Name" character varying(100) NOT NULL,
++        "Email" character varying(254) NOT NULL,
++        "PasswordHash" character varying(512) NOT NULL,
++        "Role" character varying(80) NOT NULL DEFAULT 'Membro',
++        "IsActive" boolean NOT NULL DEFAULT TRUE,
++        "CreatedAt" timestamp with time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
++        CONSTRAINT "PK_Users" PRIMARY KEY ("Id"),
++        CONSTRAINT "FK_Users_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE,
++        CONSTRAINT "FK_Users_Roles_CargoId" FOREIGN KEY ("CargoId") REFERENCES "Roles" ("Id") ON DELETE RESTRICT
++    );
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Churches_Email" ON "Churches" ("Email");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Events_ChurchId" ON "Events" ("ChurchId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Events_ChurchId_StartsAt" ON "Events" ("ChurchId", "StartsAt");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Members_ChurchId" ON "Members" ("ChurchId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Ministries_ChurchId" ON "Ministries" ("ChurchId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Roles_ChurchId" ON "Roles" ("ChurchId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Scales_ChurchId" ON "Scales" ("ChurchId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Scales_ChurchId_StartsAt" ON "Scales" ("ChurchId", "StartsAt");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Scales_EventId" ON "Scales" ("EventId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Transactions_ChurchId" ON "Transactions" ("ChurchId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Transactions_ChurchId_TransactionDate" ON "Transactions" ("ChurchId", "TransactionDate");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Users_CargoId" ON "Users" ("CargoId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE INDEX "IX_Users_ChurchId" ON "Users" ("ChurchId");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    CREATE UNIQUE INDEX "IX_Users_Email" ON "Users" ("Email");
++    END IF;
++END $EF$;
++
++DO $EF$
++BEGIN
++    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261123232145_InitialPostgresSchema') THEN
++    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
++    VALUES ('20261123232145_InitialPostgresSchema', '8.0.32');
++    END IF;
++END $EF$;
++COMMIT;
++
+diff --git a/backend/database/schema.sql b/backend/database/schema.sql
+index 8318a4f..c48123e 100644
+--- a/backend/database/schema.sql
++++ b/backend/database/schema.sql
+@@ -1,66 +1,140 @@
+-CREATE DATABASE IF NOT EXISTS churchmanager CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-USE churchmanager;
++-- =============================================================================
++-- ChurchManager — Canonical PostgreSQL Schema for Supabase
++-- Target Database: PostgreSQL 15+ (Supabase)
++-- =============================================================================
+ 
+-CREATE TABLE IF NOT EXISTS Churches (
+-  Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+-  Name VARCHAR(180) NOT NULL,
+-  Email VARCHAR(254) NOT NULL,
+-  Phone VARCHAR(40) NOT NULL DEFAULT '',
+-  Address VARCHAR(250) NOT NULL DEFAULT '',
+-  CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+-  INDEX IX_Churches_Email (Email)
++CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
++    "MigrationId" character varying(150) NOT NULL,
++    "ProductVersion" character varying(32) NOT NULL,
++    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+ );
+-CREATE TABLE IF NOT EXISTS Users (
+-  Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+-  ChurchId INT NOT NULL,
+-  Name VARCHAR(160) NOT NULL,
+-  Email VARCHAR(254) NOT NULL,
+-  PasswordHash VARCHAR(512) NOT NULL,
+-  Role VARCHAR(80) NOT NULL DEFAULT 'Membro',
+-  CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+-  UNIQUE KEY IX_Users_Email (Email),
+-  CONSTRAINT FK_Users_Churches FOREIGN KEY (ChurchId) REFERENCES Churches(Id) ON DELETE CASCADE
++
++-- 1. Churches
++CREATE TABLE IF NOT EXISTS "Churches" (
++    "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++    "Name" character varying(100) NOT NULL,
++    "Email" character varying(254) NOT NULL,
++    "Phone" character varying(40) NOT NULL DEFAULT '',
++    "Address" character varying(255) NOT NULL DEFAULT '',
++    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP
+ );
+-CREATE TABLE IF NOT EXISTS Members (
+-  Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ChurchId INT NOT NULL,
+-  Name VARCHAR(160) NOT NULL, Email VARCHAR(254) NOT NULL DEFAULT '', Phone VARCHAR(40) NOT NULL DEFAULT '',
+-  Ministry VARCHAR(120) NOT NULL DEFAULT '', Status VARCHAR(40) NOT NULL DEFAULT 'Ativo', Role VARCHAR(80) NOT NULL DEFAULT 'Membro',
+-  CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), INDEX IX_Members_ChurchId (ChurchId),
+-  CONSTRAINT FK_Members_Churches FOREIGN KEY (ChurchId) REFERENCES Churches(Id) ON DELETE CASCADE
++CREATE INDEX IF NOT EXISTS "IX_Churches_Email" ON "Churches" ("Email");
++
++-- 2. Roles
++CREATE TABLE IF NOT EXISTS "Roles" (
++    "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++    "ChurchId" integer NOT NULL,
++    "Name" character varying(50) NOT NULL,
++    "Description" character varying(500) NOT NULL DEFAULT '',
++    "PermissionsJson" text NOT NULL DEFAULT '[]',
++    "Users" integer NOT NULL DEFAULT 0,
++    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
++    CONSTRAINT "FK_Roles_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
+ );
+-CREATE TABLE IF NOT EXISTS Ministries (
+-  Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ChurchId INT NOT NULL, Name VARCHAR(160) NOT NULL,
+-  Description VARCHAR(500) NOT NULL DEFAULT '', Coordinator VARCHAR(160) NOT NULL DEFAULT '', Status VARCHAR(40) NOT NULL DEFAULT 'Ativo',
+-  CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), INDEX IX_Ministries_ChurchId (ChurchId),
+-  CONSTRAINT FK_Ministries_Churches FOREIGN KEY (ChurchId) REFERENCES Churches(Id) ON DELETE CASCADE
++CREATE INDEX IF NOT EXISTS "IX_Roles_ChurchId" ON "Roles" ("ChurchId");
++
++-- 3. Users
++CREATE TABLE IF NOT EXISTS "Users" (
++    "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++    "ChurchId" integer NOT NULL,
++    "CargoId" integer NOT NULL DEFAULT 0,
++    "Name" character varying(100) NOT NULL,
++    "Email" character varying(254) NOT NULL,
++    "PasswordHash" character varying(512) NOT NULL,
++    "Role" character varying(80) NOT NULL DEFAULT 'Membro',
++    "IsActive" boolean NOT NULL DEFAULT TRUE,
++    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
++    CONSTRAINT "FK_Users_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE,
++    CONSTRAINT "FK_Users_Roles_CargoId" FOREIGN KEY ("CargoId") REFERENCES "Roles" ("Id") ON DELETE RESTRICT
+ );
+-CREATE TABLE IF NOT EXISTS Events (
+-  Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ChurchId INT NOT NULL, Title VARCHAR(180) NOT NULL,
+-  Description VARCHAR(1000) NOT NULL DEFAULT '', StartsAt DATETIME(6) NOT NULL, Location VARCHAR(180) NOT NULL DEFAULT '',
+-  Ministry VARCHAR(120) NOT NULL DEFAULT 'Todos', Status VARCHAR(40) NOT NULL DEFAULT 'Planejado',
+-  CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), INDEX IX_Events_ChurchId (ChurchId),
+-  INDEX IX_Events_ChurchId_StartsAt (ChurchId, StartsAt),
+-  CONSTRAINT FK_Events_Churches FOREIGN KEY (ChurchId) REFERENCES Churches(Id) ON DELETE CASCADE
++CREATE UNIQUE INDEX IF NOT EXISTS "IX_Users_Email" ON "Users" ("Email");
++CREATE INDEX IF NOT EXISTS "IX_Users_ChurchId" ON "Users" ("ChurchId");
++CREATE INDEX IF NOT EXISTS "IX_Users_CargoId" ON "Users" ("CargoId");
++
++-- 4. Members
++CREATE TABLE IF NOT EXISTS "Members" (
++    "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++    "ChurchId" integer NOT NULL,
++    "Name" character varying(160) NOT NULL,
++    "Email" character varying(254) NOT NULL DEFAULT '',
++    "Phone" character varying(40) NOT NULL DEFAULT '',
++    "Ministry" character varying(120) NOT NULL DEFAULT '',
++    "Status" character varying(40) NOT NULL DEFAULT 'Ativo',
++    "Role" character varying(80) NOT NULL DEFAULT 'Membro',
++    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
++    CONSTRAINT "FK_Members_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
+ );
+-CREATE TABLE IF NOT EXISTS Transactions (
+-  Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ChurchId INT NOT NULL, Description VARCHAR(180) NOT NULL,
+-  Category VARCHAR(100) NOT NULL DEFAULT 'Outros', Amount DECIMAL(12,2) NOT NULL,
+-  TransactionType VARCHAR(30) NOT NULL DEFAULT 'Income', TransactionDate DATETIME(6) NOT NULL,
+-  Method VARCHAR(50) NOT NULL DEFAULT 'PIX', CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+-  INDEX IX_Transactions_ChurchId (ChurchId), INDEX IX_Transactions_ChurchId_TransactionDate (ChurchId, TransactionDate),
+-  CONSTRAINT FK_Transactions_Churches FOREIGN KEY (ChurchId) REFERENCES Churches(Id) ON DELETE CASCADE,
+-  CONSTRAINT CK_Transactions_Amount CHECK (Amount > 0), CONSTRAINT CK_Transactions_Type CHECK (TransactionType IN ('Income','Expense'))
++CREATE INDEX IF NOT EXISTS "IX_Members_ChurchId" ON "Members" ("ChurchId");
++
++-- 5. Ministries
++CREATE TABLE IF NOT EXISTS "Ministries" (
++    "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++    "ChurchId" integer NOT NULL,
++    "Name" character varying(160) NOT NULL,
++    "Description" character varying(500) NOT NULL DEFAULT '',
++    "Coordinator" character varying(160) NOT NULL DEFAULT '',
++    "Status" character varying(40) NOT NULL DEFAULT 'Ativo',
++    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
++    CONSTRAINT "FK_Ministries_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
+ );
+-CREATE TABLE IF NOT EXISTS Roles (
+-  Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ChurchId INT NOT NULL, Name VARCHAR(120) NOT NULL,
+-  Description VARCHAR(500) NOT NULL DEFAULT '', PermissionsJson JSON NOT NULL, Users INT NOT NULL DEFAULT 0,
+-  CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), INDEX IX_Roles_ChurchId (ChurchId),
+-  CONSTRAINT FK_Roles_Churches FOREIGN KEY (ChurchId) REFERENCES Churches(Id) ON DELETE CASCADE
++CREATE INDEX IF NOT EXISTS "IX_Ministries_ChurchId" ON "Ministries" ("ChurchId");
++
++-- 6. Events
++CREATE TABLE IF NOT EXISTS "Events" (
++    "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++    "ChurchId" integer NOT NULL,
++    "Title" character varying(100) NOT NULL,
++    "Description" text NOT NULL DEFAULT '',
++    "StartsAt" timestamp with time zone NOT NULL,
++    "Location" character varying(255) NOT NULL DEFAULT '',
++    "Ministry" character varying(120) NOT NULL DEFAULT 'Todos',
++    "Status" character varying(40) NOT NULL DEFAULT 'Planejado',
++    "IsRestricted" boolean NOT NULL DEFAULT FALSE,
++    "RecurrenceType" character varying(50) NOT NULL DEFAULT 'Nenhuma',
++    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
++    CONSTRAINT "FK_Events_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE
+ );
+-CREATE TABLE IF NOT EXISTS Scales (
+-  Id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ChurchId INT NOT NULL, Title VARCHAR(180) NOT NULL,
+-  Ministry VARCHAR(120) NOT NULL DEFAULT '', StartsAt DATETIME(6) NOT NULL, AssignedMembersJson JSON NOT NULL,
+-  Status VARCHAR(40) NOT NULL DEFAULT 'Pendente', CreatedAt DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+-  INDEX IX_Scales_ChurchId (ChurchId), INDEX IX_Scales_ChurchId_StartsAt (ChurchId, StartsAt),
+-  CONSTRAINT FK_Scales_Churches FOREIGN KEY (ChurchId) REFERENCES Churches(Id) ON DELETE CASCADE
+-);
+\ No newline at end of file
++CREATE INDEX IF NOT EXISTS "IX_Events_ChurchId" ON "Events" ("ChurchId");
++CREATE INDEX IF NOT EXISTS "IX_Events_ChurchId_StartsAt" ON "Events" ("ChurchId", "StartsAt");
++
++-- 7. Transactions
++CREATE TABLE IF NOT EXISTS "Transactions" (
++    "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++    "ChurchId" integer NOT NULL,
++    "Description" character varying(180) NOT NULL,
++    "Category" character varying(100) NOT NULL DEFAULT 'Outros',
++    "Amount" numeric(12,2) NOT NULL,
++    "TransactionType" character varying(30) NOT NULL DEFAULT 'Income',
++    "TransactionDate" timestamp with time zone NOT NULL,
++    "Method" character varying(50) NOT NULL DEFAULT 'PIX',
++    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
++    CONSTRAINT "FK_Transactions_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE,
++    CONSTRAINT "CK_Transactions_Amount" CHECK ("Amount" > 0),
++    CONSTRAINT "CK_Transactions_Type" CHECK ("TransactionType" IN ('Income','Expense'))
++);
++CREATE INDEX IF NOT EXISTS "IX_Transactions_ChurchId" ON "Transactions" ("ChurchId");
++CREATE INDEX IF NOT EXISTS "IX_Transactions_ChurchId_TransactionDate" ON "Transactions" ("ChurchId", "TransactionDate");
++
++-- 8. Scales
++CREATE TABLE IF NOT EXISTS "Scales" (
++    "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
++    "ChurchId" integer NOT NULL,
++    "Title" character varying(180) NOT NULL,
++    "Ministry" character varying(120) NOT NULL,
++    "StartsAt" timestamp with time zone NOT NULL,
++    "AssignedMembersJson" text NOT NULL DEFAULT '[]',
++    "Status" character varying(40) NOT NULL DEFAULT 'Pendente',
++    "EventId" integer NULL,
++    "LegacyMinistryName" character varying(100) NOT NULL DEFAULT '',
++    "CreatedAt" timestamp with time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
++    CONSTRAINT "FK_Scales_Churches_ChurchId" FOREIGN KEY ("ChurchId") REFERENCES "Churches" ("Id") ON DELETE CASCADE,
++    CONSTRAINT "FK_Scales_Events_EventId" FOREIGN KEY ("EventId") REFERENCES "Events" ("Id") ON DELETE SET NULL
++);
++CREATE INDEX IF NOT EXISTS "IX_Scales_ChurchId" ON "Scales" ("ChurchId");
++CREATE INDEX IF NOT EXISTS "IX_Scales_ChurchId_StartsAt" ON "Scales" ("ChurchId", "StartsAt");
++CREATE INDEX IF NOT EXISTS "IX_Scales_EventId" ON "Scales" ("EventId");
++
++-- Register initial migration in EF Core history
++INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
++VALUES ('20261123232145_InitialPostgresSchema', '8.0.32')
++ON CONFLICT ("MigrationId") DO NOTHING;
+-- 
+2.43.0
+
