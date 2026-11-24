@@ -88,7 +88,7 @@ var allowedOrigins = originCandidates.Where(x => !string.IsNullOrWhiteSpace(x))
     .Cast<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
 builder.Services.AddCors(options => options.AddPolicy("Frontend", policy => policy
-    .WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod()));
+    .WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -129,6 +129,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
         ClockSkew = TimeSpan.FromSeconds(15)
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            if (context.Request.Cookies.TryGetValue("churchmanager-auth", out var cookieToken))
+                context.Token = cookieToken;
+            return Task.CompletedTask;
+        }
+    };
 });
 builder.Services.AddAuthorization();
 
@@ -156,6 +165,26 @@ app.Use(async (context, next) =>
 if (!app.Environment.IsDevelopment()) app.UseHsts();
 app.UseRouting();
 app.UseCors("Frontend");
+// Protege endpoints mutáveis contra requisições cross-site com autenticação por cookie.
+app.Use(async (context, next) =>
+{
+    var method = context.Request.Method;
+    var mutating = method is "POST" or "PUT" or "PATCH" or "DELETE";
+    if (!app.Environment.IsDevelopment()
+        && mutating
+        && context.Request.Path.StartsWithSegments("/api"))
+    {
+        var origin = context.Request.Headers.Origin.ToString();
+        if (!string.IsNullOrEmpty(origin)
+            && !allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            await context.Response.WriteAsJsonAsync(new { message = "Origem da requisição não autorizada." });
+            return;
+        }
+    }
+    await next();
+});
 app.UseRateLimiter();
 if (app.Environment.IsDevelopment()) { app.UseSwagger(); app.UseSwaggerUI(); }
 app.UseAuthentication();

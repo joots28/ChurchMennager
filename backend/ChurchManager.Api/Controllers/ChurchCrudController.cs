@@ -46,6 +46,8 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
     public async Task<IActionResult> Create([FromBody] T item)
     {
         if (CurrentChurchId is not int churchId) return Unauthorized();
+        if (item is Member member && string.Equals(member.Role, "Administrador", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "O cargo Administrador só pode ser atribuído pelo fluxo seguro de provisionamento." });
         ChurchEntityValidator.Normalize(item);
         if (ChurchEntityValidator.Validate(item) is { } validationError)
             return BadRequest(new { message = validationError });
@@ -60,6 +62,8 @@ public abstract class ChurchCrudController<T>(AppDbContext db) : ControllerBase 
         if (CurrentChurchId is not int churchId) return Unauthorized();
         var current = await Db.Set<T>().FirstOrDefaultAsync(x => x.Id == id && x.ChurchId == churchId);
         if (current is null) return NotFound();
+        if (input is Member member && string.Equals(member.Role, "Administrador", StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { message = "O cargo Administrador só pode ser atribuído pelo fluxo seguro de provisionamento." });
         ChurchEntityValidator.Normalize(input);
         if (ChurchEntityValidator.Validate(input) is { } validationError)
             return BadRequest(new { message = validationError });
