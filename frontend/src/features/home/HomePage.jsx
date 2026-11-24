@@ -3,6 +3,7 @@ import Button from '../../components/ui/Button.jsx';
 import SectionLabel from '../../components/ui/SectionLabel.jsx';
 import EventList from '../../components/ui/EventList.jsx';
 import MetricCard from '../../components/ui/MetricCard.jsx';
+import EmptyState from '../../components/ui/EmptyState.jsx';
 import { currency, dateBR } from '../../utils/formatters.js';
 import './HomePage.css';
 import '../../components/ui/Panel.css';
