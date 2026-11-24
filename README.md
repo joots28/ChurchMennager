@@ -1,304 +1,95 @@
-<div align="center">
-
 # ChurchManager
 
-### Gestão organizada para comunidades e instituições religiosas
+Sistema web responsivo de gestão de igrejas, desenvolvido como TCC.
 
-**Projeto acadêmico / TCC · Web responsiva · React + C# / ASP.NET Core + PostgreSQL remoto / MySQL local**
+## Arquitetura oficial
 
-[Objetivo](#-objetivo-do-projeto) · [Funcionalidades](#-funcionalidades) · [Tecnologias](#-tecnologias) · [Executar localmente](#-executar-localmente) · [Arquitetura](#-arquitetura) · [Implantação](#-implantação) · [Segurança](#-segurança-e-limitações)
+**Todo o código fica em um único repositório GitHub:** [joots28/ChurchMennager](https://github.com/joots28/ChurchMennager), branch `main`.
 
-</div>
+- **Frontend:** React 18 + JavaScript/JSX + Vite.
+- **Backend:** C# + ASP.NET Core 8 + Entity Framework Core.
+- **Banco de dados:** PostgreSQL gerenciado pelo Supabase, projeto `NexEl`.
+- **Hospedagem:** Render. O serviço estático publica `frontend/`; o serviço Docker publica a API em `backend/ChurchManager.Api/`. Ambos usam o mesmo repositório e a mesma branch.
+- **Fluxo:** navegador → HTTPS → API C# → PostgreSQL/TLS → Supabase.
 
-> **Arquitetura oficial definida em 23/11/2026:** PostgreSQL no Supabase + API ASP.NET Core/C# no Render + React/Vite no Vercel. O plano executável de migração, banco, segurança, deploy e tarefas do Antigravity está em [docs/GUIA-ADAPTACAO-POSTGRES-SUPABASE-ANTIGRAVITY.md](docs/GUIA-ADAPTACAO-POSTGRES-SUPABASE-ANTIGRAVITY.md). As referências antigas a MySQL, Neon e frontend no Render devem ser tratadas como histórico até a adaptação ser concluída.
+O navegador nunca recebe a senha do banco nem acessa PostgreSQL diretamente. A API concentra autenticação, validação, autorização e regras de negócio.
 
----
-
-## 📌 Sobre o projeto
-
-O **ChurchManager** é uma proposta de sistema web para centralizar rotinas administrativas de uma igreja ou comunidade religiosa em uma interface responsiva, utilizável em computadores, tablets e celulares. A ideia é substituir parte dos controles dispersos em anotações e planilhas por módulos organizados, com informações estruturadas e acesso controlado.
-
-O projeto está sendo desenvolvido como trabalho acadêmico/TCC. Esta versão reúne uma base de front-end, uma API independente e um esquema de banco de dados. Ela **não deve ser confundida com uma versão de produção pronta**: alguns fluxos ainda são demonstrativos e os builds completos e os testes integrados precisam ser executados antes de uma publicação estável.
-
-## 🎯 Objetivo do projeto
-
-- Centralizar informações administrativas e operacionais em um único ambiente.
-- Facilitar a organização de membros, ministérios, eventos, escalas, cargos e registros financeiros.
-- Oferecer uma experiência coerente em dispositivos móveis e desktop, sem manter duas aplicações separadas.
-- Separar interface, regras de negócio, API e persistência para facilitar manutenção e evolução.
-- Aplicar práticas de desenvolvimento estudadas no curso: componentes reutilizáveis, validação no servidor, autenticação, organização modular, configuração por ambiente e documentação técnica.
-
-### Por que ele é importante?
-
-Uma organização comunitária depende de informações confiáveis e acessíveis às pessoas certas. Reunir essas rotinas em módulos bem definidos pode reduzir retrabalho, facilitar o planejamento e apoiar a continuidade das atividades. Do ponto de vista educacional, o ChurchManager também permite praticar a construção de uma aplicação full-stack, desde a interface até a API e o modelo relacional, deixando explícitos os cuidados de segurança e as limitações que ainda precisam ser resolvidas.
-
-## 🧩 Funcionalidades
-
-Os itens abaixo descrevem o código desta versão. Quando uma função ainda é visual, local ou parcial, isso está sinalizado para não confundir uma demonstração com um serviço já integrado.
-
-| Módulo | O que oferece nesta versão | Situação / observação |
-|---|---|---|
-| Acesso | Tela de login, cadastro em duas etapas e telas de recuperação de acesso | Login e cadastro possuem fluxo na API; recuperação por e-mail ainda não está integrada |
-| Painel inicial | Resumo visual e indicadores da rotina administrativa | Dados podem ser demonstrativos; validar as métricas contra a API antes de uso real |
-| Membros | Listagem e operações de cadastro, consulta, edição e exclusão | API REST disponível; validar o fluxo completo em ambiente local |
-| Ministérios | Organização e manutenção de ministérios | API REST disponível |
-| Eventos | Dados de eventos, datas, horários, local e status | API REST disponível; notificações automáticas não estão implementadas |
-| Financeiro | Registro de entradas e saídas e apresentação de indicadores | É um controle administrativo; não processa pagamentos reais nem se conecta a bancos |
-| Escalas | Organização de equipes, ministérios, datas e horários | API REST disponível; confirmar atribuição de integrantes durante homologação |
-| Cargos | Cadastro de cargos e informações sobre permissões | As permissões exibidas são informativas; ainda não existe RBAC granular por cargo |
-| Configurações da igreja | Consulta e atualização de dados institucionais | API de configurações disponível para a conta administrativa autenticada |
-| Portal do membro | Área visual com início, eventos, escalas, perfil e orientação sobre contribuições | O portal ainda precisa de endpoints e regras próprios para ser considerado integrado à produção |
-| Exportação CSV | Utilitário para exportar dados tabulares | Validar cada exportação manualmente; a rotina inclui neutralização de valores que poderiam ser interpretados como fórmulas |
-| Tema visual | Alternância entre tema claro e escuro | Recurso de interface |
-| Layout responsivo | Componentes e navegação adaptáveis a diferentes larguras | Requer validação em dispositivos e navegadores reais |
-| Modo de demonstração | Dados fictícios locais para demonstrar as telas sem API ativa | Somente para demonstração; não oferece persistência compartilhada entre usuários |
-
-## 🛠️ Tecnologias
-
-### Front-end
-
-- **React 18** para composição das telas e componentes.
-- **JavaScript / JSX**, sem TypeScript nesta versão.
-- **Vite** para desenvolvimento e geração dos arquivos estáticos.
-- **CSS modular por componente** para isolar estilos e facilitar manutenção.
-- `fetch` para comunicação HTTP com a API.
-
-### Back-end
-
-- **C# e ASP.NET Core (.NET 8)** para a API REST.
-- **Entity Framework Core** com provedores **Pomelo para MySQL local** e **Npgsql para PostgreSQL remoto**.
-- **JWT Bearer** para autenticação de chamadas protegidas.
-- `PasswordHasher` do ASP.NET Core para armazenar hashes de senha em vez de texto puro.
-- Validação no servidor, limitação de tentativas em endpoints de autenticação, autorização por função administrativa e isolamento por igreja nos CRUDs preparados.
-
-### Banco de dados e ambiente
-
-- **MySQL 8** para desenvolvimento local e **PostgreSQL** para hospedagem remota.
-- **Docker Compose** para subir o MySQL local.
-- **Dockerfile** da API e `render.yaml` como ponto de partida para implantação no Render.
-
-## 🧱 Arquitetura
-
-A solução está separada em três partes:
+## Estrutura
 
 ```text
-Navegador (React + Vite)
-        │ HTTPS / JSON / JWT
-        ▼
-API REST (C# / ASP.NET Core)
-        │ Entity Framework Core
-        ▼
-Banco remoto PostgreSQL (Neon) ou MySQL local
-```
-
-O front-end não deve acessar o banco diretamente. O navegador conversa com a API; a API valida a identidade e as permissões, aplica as regras e então consulta ou atualiza o banco.
-
-### Organização do repositório
-
-```text
-ChurchManager/
-├── frontend/
-│   ├── index.html
-│   ├── package.json
-│   └── src/
-│       ├── App.jsx                 # composição principal
-│       ├── main.jsx                # inicialização do React
-│       ├── config/                 # navegação e metadados
-│       ├── components/
-│       │   ├── layout/             # estrutura, menu e cabeçalho
-│       │   └── ui/                 # botões, campos, tabelas, modais etc.
-│       ├── features/               # páginas e módulos por domínio
-│       ├── hooks/                  # estado e ações reutilizáveis
-│       ├── services/               # autenticação e chamadas HTTP
-│       ├── data/                   # dados fictícios para demonstração
-│       └── utils/                  # validação, formatação e exportação
+ChurchMennager/
+├── frontend/                  # React + Vite (site/PWA)
 ├── backend/
-│   ├── ChurchManager.Api/
-│   │   ├── Controllers/            # endpoints REST
-│   │   ├── Data/                   # contexto de dados
-│   │   ├── Models/                 # entidades e contratos
-│   │   ├── Validation/             # validação no servidor
-│   │   └── Dockerfile
-│   └── database/
-│       ├── schema.sql
-│       └── migrations/
-├── docs/                            # decisões, arquitetura e validação
-├── preview/                         # prévia independente para consulta visual
-├── docker-compose.yml                # banco MySQL de desenvolvimento
-└── render.yaml                       # modelo de implantação
+│   ├── ChurchManager.Api/     # API ASP.NET Core
+│   └── database/              # scripts e histórico do esquema
+├── docs/                       # arquitetura, deploy e validação
+├── preview/                    # prévia visual independente
+└── render.yaml                 # configuração dos dois serviços Render
 ```
 
-**Por que existe apenas um `index.html` no front-end?** O React é uma SPA (*Single Page Application*): o HTML inicial carrega a aplicação e os arquivos JSX determinam as telas. Cada módulo continua separado, sem duplicar um HTML completo para cada página.
+## Endereços dos serviços
 
-## 🚀 Executar localmente
+- Frontend: https://churchmanager-tcc.onrender.com
+- API: https://churchmanager-api-tcc.onrender.com
+- Saúde da API: `/health`
+- Saúde + banco: `/health/ready`
 
-### Pré-requisitos
+A existência dos endereços não garante que o banco esteja conectado. Para considerar a publicação funcional, `/health/ready` deve retornar `database: connected` e os fluxos reais precisam ser testados.
 
-- Node.js LTS e npm.
-- .NET SDK 8.
-- MySQL Server 8.0 em execução.
-- O banco compartilhado do grupo, com as tabelas originais `Igreja`, `Usuario`, `Cargo`, `Doacao`, `Evento`, `Escala`, `Permissao`, `Presenca_Evento` e `Participacao_Escala`.
+## Configurar o Supabase no Render
 
-### 1. Preparar o banco MySQL do grupo
+No Render → serviço **churchmanager-api-tcc** → **Environment**, configure:
 
-Faça backup do banco antes de qualquer alteração. O ChurchManager reaproveita as tabelas existentes e adiciona somente os campos e tabelas complementares necessários aos módulos atuais.
+| Variável | Valor |
+|---|---|
+| `CHURCHMANAGER_DB_PROVIDER` | `postgres` |
+| `ConnectionStrings__DefaultConnection` | Connection string copiada de Supabase → Connect → Session pooler |
+| `Database__AutoCreate` | `false` |
+| `FRONTEND_ORIGIN` | `https://churchmanager-tcc.onrender.com` |
+| `AUTH_ALLOW_PUBLIC_REGISTRATION` | `false` após criar a conta administrativa |
+| `JWT_KEY` | Chave aleatória exclusiva com pelo menos 32 caracteres |
 
-Execute **uma única vez** o script:
+Use o modo **Session pooler** do Supabase para o backend ASP.NET persistente. Copie host, porta, database, usuário e senha diretamente do painel. Mantenha SSL habilitado. Não coloque a senha em código, README, issues ou arquivos versionados.
 
-```text
-backend/database/migrations/002-churchmanager-compatibility.mysql.sql
-```
+No serviço **churchmanager-tcc**, confira:
+- Root Directory: `frontend`
+- Build Command: `npm install && npm run build`
+- Publish Directory: `dist`
+- `VITE_DEMO_MODE=false`
+- `VITE_API_URL=https://churchmanager-api-tcc.onrender.com`
 
-No MySQL Workbench, abra o script e execute-o conectado ao servidor local. Pela linha de comando:
+## Executar localmente
 
-```bash
-mysql -u root -p < backend/database/migrations/002-churchmanager-compatibility.mysql.sql
-```
+Pré-requisitos: Node.js 20+ e .NET SDK 8.
 
-O script usa o banco `GestaoIgrejaTCC`. Se o banco do grupo tiver outro nome, ajuste a instrução `USE` no início do arquivo antes de executar. Não execute esse script novamente depois de aplicado.
-
-### 2. Configurar e iniciar a API
-
-Na raiz do repositório, configure a conexão por User Secrets. Substitua a senha pelo valor configurado no seu MySQL local:
-
-```bash
-dotnet user-secrets init --project backend/ChurchManager.Api/ChurchManager.Api.csproj
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost;Port=3306;Database=GestaoIgrejaTCC;User=root;Password=SUA_SENHA;" --project backend/ChurchManager.Api/ChurchManager.Api.csproj
-```
-
-Depois inicie a API:
-
-```bash
-dotnet restore backend/ChurchManager.Api/ChurchManager.Api.csproj
-dotnet run --project backend/ChurchManager.Api/ChurchManager.Api.csproj --urls http://localhost:5080
-```
-
-Verifique:
-
-- API: `http://localhost:5080/health`
-- Banco conectado: `http://localhost:5080/health/ready`
-- Swagger: `http://localhost:5080/swagger` (somente em desenvolvimento)
-
-O arquivo `appsettings.json` contém apenas uma conexão local de exemplo. Senhas reais devem ficar em User Secrets ou variáveis de ambiente, nunca em commits.
-
-### 3. Iniciar o front-end
-
-Em outro terminal:
-
+Frontend:
 ```bash
 cd frontend
-```
-
-Crie o arquivo de ambiente local (PowerShell):
-
-```powershell
-Copy-Item .env.example .env.local
-```
-
-Confirme que o arquivo contém:
-
-```dotenv
-VITE_DEMO_MODE=false
-VITE_API_URL=http://localhost:5080
-```
-
-Instale dependências e inicie o Vite:
-
-```bash
 npm install
 npm run dev
 ```
 
-Abra o endereço informado pelo Vite, normalmente `http://localhost:5173`.
-
-### 4. Instalar como PWA
-
-Em produção, o ChurchManager publica o manifesto e registra o service worker. Abra o endereço HTTPS do site no Chrome/Edge e use **Instalar ChurchManager** ou **Adicionar à tela inicial**.
-
-O cache offline mantém a estrutura estática da aplicação e seus recursos. **Dados, login e operações CRUD continuam exigindo conexão com a API e o MySQL**; respostas da API não são guardadas no cache offline.
-
-### Modo de demonstração sem API
-
-Para testar somente as telas com dados fictícios, defina em `frontend/.env.local`:
-
-```dotenv
-VITE_DEMO_MODE=true
-VITE_API_URL=http://localhost:5080
+Backend: configure a connection string do Supabase via User Secrets (não grave a senha em `appsettings.json`):
+```bash
+dotnet user-secrets init --project backend/ChurchManager.Api/ChurchManager.Api.csproj
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=HOST_DO_POOLER;Port=5432;Database=postgres;Username=USUARIO_DO_POOLER;Password=SUA_SENHA;SSL Mode=Require" --project backend/ChurchManager.Api/ChurchManager.Api.csproj
+dotnet run --project backend/ChurchManager.Api/ChurchManager.Api.csproj --urls http://localhost:5080
 ```
 
-Reinicie o Vite após alterar variáveis. Esse modo não consulta o MySQL e não deve ser usado com dados reais.
+Para o frontend local, crie `frontend/.env.local` com `VITE_DEMO_MODE=false` e `VITE_API_URL=http://localhost:5080`.
 
-## ☁️ Implantação
+## Estado da migração
 
-O `render.yaml` é um **modelo inicial**, não uma implantação já realizada. O plano de publicação previsto separa o site estático da API em Docker. Leia [`docs/PLANO-DE-DEPLOY.md`](docs/PLANO-DE-DEPLOY.md) antes de criar serviços.
+O projeto Supabase `NexEl` foi localizado e a solicitação de restauração do projeto pausado foi aceita. Isso **não comprova** que dados de outro provedor (como Neon) tenham sido importados. Antes de declarar a migração concluída, confirme que as tabelas e os registros necessários estão presentes no Supabase.
 
-- **Front-end:** Render Static Site, raiz `frontend`, comando `npm install && npm run build`, diretório publicado `dist`.
-- **API:** Render Web Service usando Dockerfile em `backend/ChurchManager.Api/Dockerfile` e contexto da raiz do repositório.
-- **Banco local do TCC:** MySQL 8 com o banco `GestaoIgrejaTCC` preparado pelo grupo e o script complementar descrito na seção de execução local. A API local conecta a esse banco sem substituir as tabelas originais.
-- **Banco publicado no Render:** o serviço em nuvem não consegue acessar `localhost` do computador do desenvolvedor. Para publicar a API, é necessário um banco remoto acessível pelo Render; o blueprint atual prevê PostgreSQL/Neon via Npgsql. Essa base remota é independente do MySQL local e não recebe automaticamente os registros do computador do grupo. Configure a conexão como variável secreta `ConnectionStrings__DefaultConnection`; `Database__AutoCreate=true` inicializa somente um banco remoto vazio.
-- **Configuração obrigatória:** `JWT_KEY`, string de conexão e `FRONTEND_ORIGIN` devem ser informados nas variáveis de ambiente do provedor. No serviço estático, defina `VITE_API_URL` para a URL HTTPS pública da API e faça novo build.
+O esquema deve ser revisado e aplicado por migração PostgreSQL versionada. A API não deve criar tabelas automaticamente em produção. Não execute scripts MySQL antigos no Supabase. Depois de aplicar o esquema, valide `/health/ready`, login, CRUD e persistência após recarregar em outro dispositivo.
 
-Serviços gratuitos de hospedagem podem suspender a API quando ficam ociosos. Isso pode causar demora na primeira solicitação. O PWA pode ser instalado pelo endereço HTTPS do site, mas a disponibilidade offline cobre somente a interface estática; login e dados continuam dependendo da API e do banco. Não publique dados de membros ou finanças reais antes de configurar armazenamento persistente, backups, autenticação e permissões de acordo com o uso pretendido.
+## Segurança
 
-## 🔐 Segurança e limitações conhecidas
+- Nunca versionar `.env`, connection strings, senhas, JWTs ou chaves privilegiadas.
+- Não disponibilizar credenciais do banco no frontend.
+- Manter CORS restrito ao domínio publicado.
+- Desativar cadastro público após criar a conta inicial.
+- Não inserir dados pessoais ou financeiros reais antes de validar autenticação, isolamento por igreja, backup e recuperação.
 
-A base inclui mecanismos de segurança úteis para desenvolvimento, mas ainda precisa de homologação antes do uso real:
-
-- Senhas protegidas por hash no back-end; o front-end não deve armazenar senhas.
-- JWT com expiração e validação de emissor/audiência.
-- Cadastro público controlado por variável de ambiente; o modelo de implantação o habilita para permitir novas contas.
-- Validação de campos na API, limites de requisição e rate limiting em login/cadastro.
-- CORS restrito à origem configurada.
-- Dados fictícios isolados no modo de demonstração.
-
-**Pendências que não devem ser tratadas como concluídas:** recuperação de senha por e-mail, verificação de e-mail, MFA, trilha completa de auditoria, permissões granulares por cargo, endpoints dedicados para toda a experiência do membro, testes automatizados de ponta a ponta e validação integral dos fluxos contra um banco real. Consulte [`docs/SEGURANCA-E-VALIDACAO.md`](docs/SEGURANCA-E-VALIDACAO.md) e [`docs/STATUS-E-VALIDACAO.md`](docs/STATUS-E-VALIDACAO.md).
-
-Nunca faça commit de arquivos `.env`, credenciais reais, chaves JWT de produção, dumps de banco ou dados pessoais. Os valores de senha presentes no Compose e no `appsettings.json` são exclusivamente locais para desenvolvimento e devem ser substituídos fora desse contexto.
-
-## 🧪 Validação atual
-
-O pacote recebido contém verificações estáticas e documentação prévia, porém o build completo do Vite, a compilação da API e o teste integrado com MySQL ainda precisam ser executados em um ambiente com as dependências disponíveis. Este repositório adiciona um fluxo de CI para executar os builds no GitHub Actions após o primeiro push; isso **não significa que a pipeline já passou**.
-
-Checklist recomendado antes de uma apresentação ou publicação:
-
-- [ ] `npm install` e `npm run build` em `frontend/`.
-- [ ] `dotnet restore` e `dotnet build` em `backend/ChurchManager.Api/`.
-- [ ] API conectando-se a um MySQL recém-inicializado.
-- [ ] Login, cadastro, sessão expirada e permissões administrativas.
-- [ ] Criar, listar, editar e excluir os registros dos módulos conectados.
-- [ ] Testes de uso em Android, telas estreitas e desktop.
-- [ ] Conferência visual com as telas correspondentes do Figma.
-- [ ] Configuração das variáveis de produção e teste de CORS.
-- [ ] Backup e restauração do banco antes de inserir dados reais.
-
-## 👨‍💻 Desenvolvedor e autoria
-
-**Desenvolvedor principal:** Jonathan Otiniel  
-**GitHub:** [@joots28](https://github.com/joots28)  
-**Contexto:** projeto acadêmico/TCC na área de desenvolvimento de sistemas.
-
-O projeto também é um exercício prático de evolução de software: manter a interface fiel às referências de design, dividir o código por responsabilidade, tornar os fluxos transparentes e registrar honestamente o que está pronto e o que depende de trabalho futuro.
-
-## 🗺️ Próximos passos sugeridos
-
-1. Confirmar os builds locais e deixar o CI verde.
-2. Revisar os fluxos de autenticação e o isolamento de dados entre igrejas.
-3. Corrigir e validar os detalhes de responsividade com capturas reais de telas pequenas e desktop.
-4. Sincronizar o Blueprint do Render, cadastrar a string de conexão do Neon como segredo e validar a conexão com PostgreSQL.
-5. Implementar recuperação de senha, verificação de e-mail, permissões granulares e auditoria conforme os requisitos do TCC.
-6. Executar testes integrados e só então publicar uma demonstração conectada a banco persistente.
-
-## 📚 Documentação complementar
-
-- [Arquitetura e boas práticas](docs/ARQUITETURA-E-BOAS-PRATICAS.md)
-- [Decisões técnicas](docs/DECISOES-TECNICAS.md)
-- [Plano de implantação](docs/PLANO-DE-DEPLOY.md)
-- [Segurança e validação](docs/SEGURANCA-E-VALIDACAO.md)
-- [Status e validação](docs/STATUS-E-VALIDACAO.md)
-- [Roteiro de validação visual](docs/ROTEIRO-DE-VALIDACAO-VISUAL.md)
-- [Relatório de transição](docs/RELATORIO-DE-TRANSICAO.md)
-- [Protótipo de referência no Figma](https://www.figma.com/design/HsCzM9y4zLXyBdFIZtn23k/TCC--Final---c%C3%B3pia-)
-
-## 📄 Licença
-
-Uma licença de distribuição ainda não foi definida neste repositório. Até que um arquivo `LICENSE` seja incluído, não presuma que o código está liberado para reutilização, redistribuição ou uso comercial.
+Consulte `docs/PLANO-DE-DEPLOY.md`, `docs/STATUS-E-VALIDACAO.md` e `docs/SEGURANCA-E-VALIDACAO.md`.
