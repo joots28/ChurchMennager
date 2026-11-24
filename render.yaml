@@ -25,7 +25,7 @@ services:
       - key: FRONTEND_ORIGIN
         value: https://churchmanager-tcc.onrender.com
       - key: AUTH_ALLOW_PUBLIC_REGISTRATION
-        value: "false"
+        value: "true"
 
   - type: web
     name: churchmanager-tcc
