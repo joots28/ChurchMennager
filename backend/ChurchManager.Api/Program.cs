@@ -17,18 +17,22 @@ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 
 var databaseProvider = (
     Environment.GetEnvironmentVariable("CHURCHMANAGER_DB_PROVIDER")
     ?? builder.Configuration["Database:Provider"]
-    ?? "mysql").Trim();
+    ?? "postgres").Trim();
 
 var connectionString = Environment.GetEnvironmentVariable("CHURCHMANAGER_DB")
     ?? builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Server=localhost;Port=3307;Database=churchmanager;User=churchmanager;Password=churchmanager_local_dev;";
+    ?? "";
 
 var usesPostgres = databaseProvider.Equals("postgres", StringComparison.OrdinalIgnoreCase)
     || databaseProvider.Equals("postgresql", StringComparison.OrdinalIgnoreCase);
 var usesMySql = databaseProvider.Equals("mysql", StringComparison.OrdinalIgnoreCase);
 
 if (!usesPostgres && !usesMySql)
-    throw new InvalidOperationException("CHURCHMANAGER_DB_PROVIDER deve ser 'mysql' ou 'postgres'.");
+    throw new InvalidOperationException("CHURCHMANAGER_DB_PROVIDER deve ser 'postgres'.");
+if (usesMySql)
+    throw new InvalidOperationException("Este ambiente deve utilizar PostgreSQL no Supabase. Configure CHURCHMANAGER_DB_PROVIDER=postgres.");
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException("Configure ConnectionStrings__DefaultConnection com a connection string PostgreSQL do Supabase.");
 
 var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? builder.Configuration["Jwt:Key"] ?? "";
 var jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? builder.Configuration["Jwt:Issuer"] ?? "ChurchManager.Api";
